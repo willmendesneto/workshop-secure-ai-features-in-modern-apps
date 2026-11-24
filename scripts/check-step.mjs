@@ -120,7 +120,8 @@ if (exercise === 'done') {
   for (const { label, ok } of results) console.log(`${ok ? 'PASS' : 'FAIL'}  ${label}`);
   console.log(
     passed
-      ? '\nAll exercises are done. Nice work! See README.md for the closing notes.'
+      ? '\nAll exercises are done. Nice work! Closing notes: CHECKLIST.md (production checklist),\n' +
+          'docs/before-after.md (step-1 -> main) and EXTRAS.md (extra tests and challenges).'
       : '\nSomething regressed: run the failing check above for details.',
   );
   process.exit(passed ? 0 : 1);

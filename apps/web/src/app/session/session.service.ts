@@ -30,7 +30,13 @@ function readStoredSession(): Session | null {
   }
 }
 
-/** Fake login: the API signs a token for a known email. Session lives in localStorage. */
+/**
+ * Fake login: the API signs a token for a known email. Session lives in localStorage.
+ *
+ * localStorage is for the workshop only: any script on the page (an XSS) can read it. In
+ * production use an HttpOnly, Secure, SameSite cookie (with CSRF protection) or a vetted OIDC
+ * library, with short token TTLs and server-side revocation.
+ */
 @Injectable({ providedIn: 'root' })
 export class SessionService {
   private readonly http = inject(HttpClient);

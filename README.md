@@ -45,8 +45,9 @@ npm ci               # only if package-lock.json changed
 Check your exercise: `npm run check:step` (or `node scripts/check-step.mjs --exercise B`).
 On `main` (`workshop.json` step 5) it runs the checks of every exercise, A to D.
 
-After the workshop: [CHECKLIST.md](CHECKLIST.md) (production checklist for AI features) and
-[docs/before-after.md](docs/before-after.md) (what changed from `step-1` to `main`).
+After the workshop: [CHECKLIST.md](CHECKLIST.md) (production checklist for AI features),
+[docs/before-after.md](docs/before-after.md) (what changed from `step-1` to `main`) and
+[EXTRAS.md](EXTRAS.md) (the extra negative tests and further challenges).
 
 Maintainers: fix on the earliest branch, then `scripts/restack.sh` and `scripts/verify-steps.sh`.
 See [docs/maintainers.md](docs/maintainers.md).
@@ -64,7 +65,8 @@ No key and no network needed. Pick the behaviour with `MOCK_SCENARIO` in `.env` 
 | `slow`           | a valid Insight after `MOCK_SLOW_MS` (default 15 s)                 |
 
 `/fake-provider/...` is a simulated third-party API served by the API process (only the `step-1`
-browser calls it directly). It is not part of the app.
+browser calls it directly). It is not part of the app. On `main` it is mounted only with the mock provider and
+never when `NODE_ENV=production`.
 
 ## Optional: real provider
 
@@ -79,6 +81,9 @@ OPENAI_API_KEY=...
 ```
 
 The API refuses to start if the selected provider has no key. Tests always use the mock.
+
+Generate `AUTH_SECRET` with `openssl rand -base64 32`; the default is for local use only (on
+`main`, `NODE_ENV=production` refuses to start with a missing, default or short secret).
 
 > **Warning:** never put a real key in `.env` while on `step-1`..`step-4`: those endpoints are
 > insecure on purpose. Use a capped, short-lived key, and only on `main`. The servers listen on

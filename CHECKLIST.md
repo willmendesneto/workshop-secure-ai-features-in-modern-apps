@@ -1,7 +1,5 @@
 # Production checklist for AI features
 
-> Draft: replace with the 9 items from the Workshop Guide.
-
 Nine rules to check before an AI feature ships. Each one is implemented and tested on `main`.
 
 - [ ] **1. Provider keys live only on the server.** Read them from the environment, never ship
@@ -9,6 +7,9 @@ Nine rules to check before an AI feature ships. Each one is implemented and test
   - Why: anything in the bundle or the Network tab is public; a leaked key spends your money.
   - In this repo: `apps/api/src/config.ts` (only env reader), `scripts/check-bundle.mjs`
     (`npm run check:bundle`).
+  - Same for your own secrets: on `main`, `NODE_ENV=production` refuses to start when
+    `AUTH_SECRET` is missing, a dev default or shorter than 32 characters
+    (`openssl rand -base64 32`; `apps/api/src/config.ts`, `apps/api/test/config.spec.ts`).
 
 - [ ] **2. Authenticate every AI endpoint.** No anonymous calls to a route that spends provider
       money or reads company data.
@@ -38,6 +39,10 @@ Nine rules to check before an AI feature ships. Each one is implemented and test
   - Why: a valid schema says nothing about intent; injected output can carry HTML or SQL.
   - In this repo: `apps/web/src/app/chat/chat.html` (interpolation `{{ }}` only),
     `eslint.config.mjs` (no `innerHTML`, no `eval`).
+  - Production notes: the API sends `X-Content-Type-Options: nosniff`, `Referrer-Policy:
+no-referrer`, `X-Frame-Options: DENY` and `Cache-Control: no-store` on `/api`
+    (`apps/api/src/app.ts`, `apps/api/test/headers.spec.ts`). Serve the Angular bundle with a
+    strict Content-Security-Policy and HSTS behind TLS.
 
 - [ ] **7. Rate limit per user and time-box provider calls.** Limit by session user, not IP, and
       abort slow provider calls.
@@ -54,5 +59,6 @@ Nine rules to check before an AI feature ships. Each one is implemented and test
 - [ ] **9. Test every control offline, with negative cases.** Assert status codes, schemas and
       prompts, never model wording; block the network in tests.
   - Why: a control without a test disappears in the next refactor.
-  - In this repo: `apps/api/test/{auth,tenant,schema,limits,logs}.spec.ts`,
-    `apps/api/test/setup.ts` (fetch blocked).
+  - In this repo: `apps/api/test/{auth,tenant,schema,limits,logs}.spec.ts` (workshop core),
+    `apps/api/test/extras/*.extra.spec.ts` (the rest, see `EXTRAS.md`), `apps/api/test/setup.ts`
+    (fetch blocked).

@@ -10,18 +10,18 @@ git diff step-1 main -- apps/web/src     # the browser no longer talks to the pr
 
 ## Controls
 
-| Control             | Before on `step-1`                                                  | After on `main`                                                                    | File                                                                                  |
-| ------------------- | ------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| Provider key (A)    | In `environment.ts`, shipped in the bundle, sent in the URL         | Server env only (`config.ts`); `check:bundle` fails on a key-like string           | `apps/api/src/config.ts`, `scripts/check-bundle.mjs`                                  |
-| Prompt and data (A) | Built in the browser from the full report                           | Built on the server (`buildPrompt`); the browser sends `{ question }`              | `apps/api/src/assistant/prompt.ts`, `apps/web/src/app/assistant/assistant.service.ts` |
-| Authentication (A)  | None on `/api/assistant` or `/api/data/report`                      | `requireAuth` → 401 `unauthorized`                                                 | `apps/api/src/auth/require-auth.ts`                                                   |
-| Rate limit (A)      | None                                                                | Per session user → 429 `rate_limited`                                              | `apps/api/src/routes/assistant.ts`                                                    |
-| Timeout (A)         | Provider call waits forever                                         | `AbortController` after `assistantTimeoutMs` → 504 `timeout`                       | `apps/api/src/routes/assistant.ts`                                                    |
-| Input bounds (B)    | `question: z.string().min(1)`, no maximum                           | `AskRequestSchema`: trimmed, 1–2,000 chars → 400 `invalid_request` (paths only)    | `packages/contracts/src/index.ts`                                                     |
-| Model output (B)    | `res.json({ raw })`, the browser does `JSON.parse(text) as Insight` | `JSON.parse` + `InsightSchema.safeParse` → 502 `invalid_model_output` + fallback   | `apps/api/src/routes/assistant.ts`                                                    |
-| Tenant and role (C) | `tenantId` from the body, no permission check                       | Tenant from the session, `assertCanRead` before `getReport` → 403 `forbidden`      | `apps/api/src/auth/authorize.ts`, `apps/api/src/routes/data.ts`                       |
-| Logs (D)            | Every header (bearer token included) and the full body              | One line on `finish`: method, path, userId, tenantId, status, durationMs; `redact` | `apps/api/src/routes/assistant.ts`, `apps/api/src/logger.ts`                          |
-| Negative tests (D)  | `it.todo`                                                           | 22 offline tests: 401, 403, 400, 429, 502, 504, logs; `fetch` blocked in tests     | `apps/api/test/*.spec.ts`, `apps/api/test/setup.ts`                                   |
+| Control               | Before on `step-1`                                                  | After on `main`                                                                                                                                                    | File                                                                                        |
+| --------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------- |
+| Provider key (A)      | In `environment.ts`, shipped in the bundle, sent in the URL         | Server env only (`config.ts`); `check:bundle` fails on a key-like string                                                                                           | `apps/api/src/config.ts`, `scripts/check-bundle.mjs`                                        |
+| Prompt and data (A)   | Built in the browser from the full report                           | Built on the server (`buildPrompt`); the browser sends `{ question }`                                                                                              | `apps/api/src/assistant/prompt.ts`, `apps/web/src/app/assistant/assistant.service.ts`       |
+| Authentication (A, C) | None on `/api/assistant` or `/api/data/report`                      | (A) `/api/assistant`; (C) `/api/data/report`: `requireAuth` → 401 `unauthorized`                                                                                   | `apps/api/src/auth/require-auth.ts`                                                         |
+| Rate limit (A)        | None                                                                | Per session user → 429 `rate_limited`                                                                                                                              | `apps/api/src/routes/assistant.ts`                                                          |
+| Timeout (A)           | Provider call waits forever                                         | `AbortController` after `assistantTimeoutMs` → 504 `timeout`                                                                                                       | `apps/api/src/routes/assistant.ts`                                                          |
+| Input bounds (B)      | `question: z.string().min(1)`, no maximum                           | `AskRequestSchema`: trimmed, 1–2,000 chars → 400 `invalid_request` (paths only)                                                                                    | `packages/contracts/src/index.ts`                                                           |
+| Model output (B)      | `res.json({ raw })`, the browser does `JSON.parse(text) as Insight` | `JSON.parse` + `InsightSchema.safeParse` → 502 `invalid_model_output` + fallback                                                                                   | `apps/api/src/routes/assistant.ts`                                                          |
+| Tenant and role (C)   | `tenantId` from the body, no permission check                       | Tenant from the session, `assertCanRead` before `getReport` → 403 `forbidden`                                                                                      | `apps/api/src/auth/authorize.ts`, `apps/api/src/routes/data.ts`                             |
+| Logs (D)              | Every header (bearer token included) and the full body              | One line on `finish`: method, path, userId, tenantId, status, durationMs; `redact`                                                                                 | `apps/api/src/routes/assistant.ts`, `apps/api/src/logger.ts`                                |
+| Negative tests (D)    | `it.todo`                                                           | Core: 4 offline tests (no token in logs, safe log line, 403, 429) + 2 worked examples; extras: 19 more (401, 403, 400, 502, 504, logs, redaction); `fetch` blocked | `apps/api/test/*.spec.ts`, `apps/api/test/extras/*.extra.spec.ts`, `apps/api/test/setup.ts` |
 
 ## Code excerpts
 
@@ -137,16 +137,18 @@ res.on('finish', () => {
 Before (`step-1:apps/api/test/limits.spec.ts`):
 
 ```ts
-it.todo(
-  'returns 504 { error: "timeout" } for mockScenario "slow" with mockSlowMs 2000 and assistantTimeoutMs 50',
-);
+it.todo('returns 429 for the 4th request when config.rateLimit.max is 3');
 ```
 
-After (`main:apps/api/test/limits.spec.ts`):
+After (`main:apps/api/test/limits.spec.ts`, one of the 4 core tests; the other negative tests are
+in `apps/api/test/extras/`, see [EXTRAS.md](../EXTRAS.md)):
 
 ```ts
-const res = await ask(appWith({ mockScenario: 'slow', mockSlowMs: 2000, assistantTimeoutMs: 50 }));
+for (let i = 0; i < 3; i += 1) {
+  expect((await ask()).status).toBe(200);
+}
+const res = await ask();
 
-expect(res.status).toBe(504);
-expect(res.body).toEqual({ error: 'timeout' });
+expect(res.status).toBe(429);
+expect(res.body).toEqual({ error: 'rate_limited' });
 ```

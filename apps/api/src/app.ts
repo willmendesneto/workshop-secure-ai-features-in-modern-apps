@@ -1,4 +1,4 @@
-import express, { type ErrorRequestHandler, type Express } from 'express';
+import express, { type ErrorRequestHandler, type Express, type RequestHandler } from 'express';
 import { ForbiddenError } from './auth/authorize.js';
 import { sessionUser } from './auth/require-auth.js';
 import { loadConfig, type Config } from './config.js';
@@ -43,12 +43,23 @@ const errorHandler: ErrorRequestHandler = (err: unknown, _req, res, _next) => {
   res.status(500).json({ error: 'Internal server error' });
 };
 
+/** Baseline security headers (no dependency). The API only serves JSON. */
+const securityHeaders: RequestHandler = (req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Referrer-Policy', 'no-referrer');
+  res.setHeader('X-Frame-Options', 'DENY');
+  // API answers carry tenant data: never cache them in the browser or a shared proxy.
+  if (req.path.startsWith('/api')) res.setHeader('Cache-Control', 'no-store');
+  next();
+};
+
 export function createApp(options: AppOptions = {}): Express {
   const config: Config = { ...loadConfig(), ...options.config };
   const provider = options.provider ?? createProvider(config);
   const app = express();
 
   app.disable('x-powered-by');
+  app.use(securityHeaders);
   app.use(express.json({ limit: '100kb' }));
 
   app.get('/health', (_req, res) => {
@@ -59,8 +70,12 @@ export function createApp(options: AppOptions = {}): Express {
   app.use('/api/data', dataRouter(config));
   app.use('/api/assistant', assistantRouter(provider, config));
 
-  // Not part of the app: a simulated third-party LLM API so the workshop runs offline.
-  app.use('/fake-provider', fakeProviderRouter(config));
+  // Not part of the app: a simulated third-party LLM API so the workshop runs offline. Mounted
+  // only with the mock provider and never in production. Its `?key=` query parameter mimics an
+  // old provider style on purpose (keys in URLs end up in logs); the workshop teaches header keys.
+  if (config.provider === 'mock' && config.nodeEnv !== 'production') {
+    app.use('/fake-provider', fakeProviderRouter(config));
+  }
 
   app.use((_req, res) => {
     res.status(404).json({ error: 'Not found' });

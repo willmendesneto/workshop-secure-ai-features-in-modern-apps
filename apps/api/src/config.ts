@@ -11,11 +11,17 @@ const optionalString = z
 export const MockScenarioSchema = z.enum(['ok', 'malformed', 'injection-echo', 'slow']);
 export type MockScenario = z.infer<typeof MockScenarioSchema>;
 
+// Known non-secret AUTH_SECRET values: the dev default below and the .env.example value.
+const DEV_AUTH_SECRET = 'dev-only-secret-change-me';
+const WEAK_AUTH_SECRETS = new Set([DEV_AUTH_SECRET, 'change-me-dev-only']);
+const MIN_PRODUCTION_SECRET_LENGTH = 32;
+
 const EnvSchema = z.object({
+  NODE_ENV: z.string().min(1).default('development'),
   PORT: z.coerce.number().int().min(1).max(65535).default(3000),
   // Loopback only by default: the API is not reachable from other machines on the network.
   HOST: z.string().min(1).default('127.0.0.1'),
-  AUTH_SECRET: z.string().min(1).default('dev-only-secret-change-me'),
+  AUTH_SECRET: optionalString,
   PROVIDER: z.enum(['mock', 'gemini', 'openai']).default('mock'),
   MOCK_SCENARIO: MockScenarioSchema.default('ok'),
   MOCK_SLOW_MS: z.coerce.number().int().min(0).default(15_000),
@@ -31,6 +37,8 @@ const EnvSchema = z.object({
 });
 
 export interface Config {
+  /** NODE_ENV ('development' when unset). `production` turns on the startup guards. */
+  nodeEnv: string;
   port: number;
   host: string;
   authSecret: string;
@@ -50,12 +58,31 @@ export interface Config {
   openaiModel: string;
 }
 
+/**
+ * In production the token signing secret must be set, must not be a known dev value and must be
+ * at least 32 characters (`openssl rand -base64 32`). Dev and tests keep the default.
+ */
+function authSecretFor(nodeEnv: string, secret: string | undefined): string {
+  if (nodeEnv !== 'production') return secret ?? DEV_AUTH_SECRET;
+  if (
+    secret === undefined ||
+    WEAK_AUTH_SECRETS.has(secret) ||
+    secret.length < MIN_PRODUCTION_SECRET_LENGTH
+  ) {
+    throw new Error(
+      `NODE_ENV=production needs a strong AUTH_SECRET (at least ${String(MIN_PRODUCTION_SECRET_LENGTH)} characters, not a default). Generate one with: openssl rand -base64 32`,
+    );
+  }
+  return secret;
+}
+
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   const parsed = EnvSchema.parse(env);
   return {
+    nodeEnv: parsed.NODE_ENV,
     port: parsed.PORT,
     host: parsed.HOST,
-    authSecret: parsed.AUTH_SECRET,
+    authSecret: authSecretFor(parsed.NODE_ENV, parsed.AUTH_SECRET),
     provider: parsed.PROVIDER,
     mockScenario: parsed.MOCK_SCENARIO,
     mockSlowMs: parsed.MOCK_SLOW_MS,
