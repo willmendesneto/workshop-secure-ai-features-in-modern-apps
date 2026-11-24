@@ -48,6 +48,9 @@ On `main` (`workshop.json` step 5) it runs the checks of every exercise, A to D.
 After the workshop: [CHECKLIST.md](CHECKLIST.md) (production checklist for AI features) and
 [docs/before-after.md](docs/before-after.md) (what changed from `step-1` to `main`).
 
+Maintainers: fix on the earliest branch, then `scripts/restack.sh` and `scripts/verify-steps.sh`.
+See [docs/maintainers.md](docs/maintainers.md).
+
 ## Mock provider (default, offline)
 
 No key and no network needed. Pick the behaviour with `MOCK_SCENARIO` in `.env` (copy
