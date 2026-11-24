@@ -12,12 +12,10 @@ const GeminiResponseSchema = z.object({
 export interface GeminiOptions {
   apiKey: string;
   model: string;
-  baseUrl?: string;
 }
 
 export function createGeminiProvider(options: GeminiOptions): LlmProvider {
-  const baseUrl = options.baseUrl ?? 'https://generativelanguage.googleapis.com';
-  const url = `${baseUrl}/v1beta/models/${encodeURIComponent(options.model)}:generateContent`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(options.model)}:generateContent`;
 
   return {
     async generate({ system, user }, callOptions) {

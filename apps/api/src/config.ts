@@ -13,6 +13,8 @@ export type MockScenario = z.infer<typeof MockScenarioSchema>;
 
 const EnvSchema = z.object({
   PORT: z.coerce.number().int().min(1).max(65535).default(3000),
+  // Loopback only by default: the API is not reachable from other machines on the network.
+  HOST: z.string().min(1).default('127.0.0.1'),
   AUTH_SECRET: z.string().min(1).default('dev-only-secret-change-me'),
   PROVIDER: z.enum(['mock', 'gemini', 'openai']).default('mock'),
   MOCK_SCENARIO: MockScenarioSchema.default('ok'),
@@ -30,6 +32,7 @@ const EnvSchema = z.object({
 
 export interface Config {
   port: number;
+  host: string;
   authSecret: string;
   provider: 'mock' | 'gemini' | 'openai';
   mockScenario: MockScenario;
@@ -51,6 +54,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   const parsed = EnvSchema.parse(env);
   return {
     port: parsed.PORT,
+    host: parsed.HOST,
     authSecret: parsed.AUTH_SECRET,
     provider: parsed.PROVIDER,
     mockScenario: parsed.MOCK_SCENARIO,

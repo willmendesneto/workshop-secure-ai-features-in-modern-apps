@@ -10,11 +10,10 @@ const ChatCompletionSchema = z.object({
 export interface OpenAiOptions {
   apiKey: string;
   model: string;
-  baseUrl?: string;
 }
 
 export function createOpenAiProvider(options: OpenAiOptions): LlmProvider {
-  const url = `${options.baseUrl ?? 'https://api.openai.com'}/v1/chat/completions`;
+  const url = 'https://api.openai.com/v1/chat/completions';
 
   return {
     async generate({ system, user }, callOptions) {

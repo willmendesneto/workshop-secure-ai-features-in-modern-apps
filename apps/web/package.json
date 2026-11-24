@@ -5,8 +5,8 @@
   "description": "Angular UI for the Company Insights Assistant.",
   "scripts": {
     "ng": "ng",
-    "dev": "ng serve --host 0.0.0.0",
-    "start": "ng serve --host 0.0.0.0",
+    "dev": "ng serve",
+    "start": "ng serve",
     "build": "ng build",
     "typecheck": "tsc -p tsconfig.app.json --noEmit"
   },

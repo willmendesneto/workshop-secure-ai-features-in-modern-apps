@@ -20,14 +20,14 @@ demo and is insecure in production. Attendees fix it in four exercises (A–D), 
 ## Hard rules
 
 - **Branches are linear:** `step-1` → `step-2` → `step-3` → `step-4` → `main`. Fix on the
-  earliest branch that has the problem, then restack the later ones (`scripts/restack.sh`, coming
-  later). Never fix only on `main`.
+  earliest branch that has the problem, then restack the later ones (see
+  [docs/maintainers.md](docs/maintainers.md)). Never fix only on `main`.
 - **Every intentional flaw has a marker:** `// WORKSHOP(X): <hint>` (or `<!-- WORKSHOP(X): ... -->`
   in templates), `X` = `A|B|C|D`. Solving an exercise removes its markers.
 - **Never commit real keys.** Fake keys use the `wsk_demo_` prefix only. No `.env` in git.
 - **Only `apps/api/src/config.ts` reads `process.env`** (ESLint enforces it).
 - **Tests are offline** and never assert model wording: use the mock provider, assert on status
-  codes, schemas and prompts.
+  codes, schemas and prompts. `fetch` throws in tests (`apps/api/test/setup.ts`).
 - **No `innerHTML`** and no `bypassSecurityTrust*` in the web app. Render model output with `{{ }}`.
 - No `any`, no `eval`, no `child_process` in the API, no `console` in the API (use `logger`).
 

@@ -31,11 +31,11 @@ grep -rn "WORKSHOP(A)" apps
    (the token is in `SessionService`). For now show the `raw` text parsed as JSON, as today.
 2. **Web:** delete `providerApiKey` (and the browser prompt in `app/assistant/prompt.ts`).
    The API already builds the prompt in `apps/api/src/assistant/prompt.ts`.
-3. **API:** add a `requireAuth` middleware: read `Authorization: Bearer <token>`, call
-   `verifyToken(token, config.authSecret)`, answer `401` when it returns `null`, and keep the
-   session user on the request (`res.locals.user`).
+3. **API:** wire the existing `requireAuth(config.authSecret)`
+   (`apps/api/src/auth/require-auth.ts`) into the assistant route. It answers `401` without a
+   valid `Authorization: Bearer <token>`; read the user with `sessionUser(res)`.
 4. **API:** add a rate limiter with `express-rate-limit` using `config.rateLimit`
-   (`windowMs`, `max`), keyed by user. Above the limit it must answer `429`.
+   (`windowMs`, `max`), keyed by `sessionUser(res).userId`. Above the limit it must answer `429`.
 5. **API:** time-box the provider call: create an `AbortController`, abort after
    `config.assistantTimeoutMs`, pass `{ signal }` to `provider.generate`, and answer
    `504 { error: 'timeout' }` when it aborts. Clear the timer when done.
@@ -44,7 +44,9 @@ grep -rn "WORKSHOP(A)" apps
 ## Hints
 
 - `express-rate-limit` is already installed in `apps/api`.
-- `verifyToken` lives in `apps/api/src/auth/token.ts` and never throws.
+- `requireAuth` is already written (it calls `verifyToken` from `apps/api/src/auth/token.ts`).
+  `assistantRouter` needs `config` to use it: pass it from `createApp`.
+- Put `requireAuth` before the limiter on the route, so `sessionUser(res)` is set in `keyGenerator`.
 - `config.assistantTimeoutMs` and `config.rateLimit` already exist in `apps/api/src/config.ts`.
 - Create the limiter inside `createApp` (per app instance), so each test gets a fresh one.
 - An aborted provider call rejects with an error whose `name` is `'AbortError'`.
@@ -54,13 +56,16 @@ grep -rn "WORKSHOP(A)" apps
 
 ```sh
 npm run check:step     # 401 without token, 200 with token, 429 above the limit, 504 on timeout
-npm run check:bundle   # no key-like string in the web bundle
 ```
+
+`check:step` also runs the bundle scan (`check:bundle`): no key-like string in the web bundle.
 
 > In real life, a key that ever shipped to a browser is leaked: **rotate it**, then move it.
 
 ## Stuck?
 
+Your work, including new files, goes to the stash:
+
 ```sh
-git stash && git checkout step-2
+git stash -u && git checkout step-2
 ```

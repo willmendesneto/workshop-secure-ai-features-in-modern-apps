@@ -30,7 +30,7 @@ run() { # label, command...
 echo "Secret scan (all history) ..."
 # Real provider key formats only. The demo key uses the wsk_demo_ prefix on purpose.
 if git -C "$ROOT" log -p --all | grep -nE 'AIza[0-9A-Za-z_-]{35}|sk-(proj-)?[A-Za-z0-9_-]{20,}' \
-  | grep -v 'check-bundle.mjs' | grep -vE "^\+?\s*(//|#|\*)" | grep -vE '/AIza|/sk-' ; then
+  | grep -vF '{35}' | grep -vF '{20,}' ; then
   echo "  FAIL  real-looking key found in history"; FAILED+=("secrets")
 else
   echo "  ok    no real-looking keys in history"

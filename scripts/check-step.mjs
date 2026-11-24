@@ -45,7 +45,13 @@ function pickExercise() {
 
 function run(label, command, args, cwd = repoRoot) {
   console.log(`\n--- ${label}\n`);
-  const result = spawnSync(command, args, { cwd, stdio: 'inherit', shell: false });
+  // npm/npx are .cmd shims on Windows and need a shell. The args are fixed (no user input).
+  const result = spawnSync(command, args, {
+    cwd,
+    stdio: 'inherit',
+    shell: process.platform === 'win32',
+  });
+  if (result.error) console.error(`Could not run ${command}: ${result.error.message}`);
   return { label, ok: result.status === 0 };
 }
 

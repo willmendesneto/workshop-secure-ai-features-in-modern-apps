@@ -4,10 +4,11 @@ import { describe, expect, it } from 'vitest';
 import { createApp } from '../src/app.js';
 import { signToken, verifyToken } from '../src/auth/token.js';
 import { z } from 'zod';
+import { TEST_SECRET, testConfig } from './helpers.js';
 
 const LoginResponseSchema = z.object({ token: z.string(), user: UserSchema });
 
-const secret = 'test-secret';
+const secret = TEST_SECRET;
 const alice = {
   userId: 'u-alice',
   email: 'alice@acme',
@@ -17,7 +18,7 @@ const alice = {
 
 describe('POST /api/auth/login', () => {
   it('returns a token for a known user that verifies to the right tenant and role', async () => {
-    const res = await request(createApp({ config: { authSecret: secret } }))
+    const res = await request(createApp({ config: testConfig }))
       .post('/api/auth/login')
       .send({ email: 'alice@acme' });
 
@@ -29,21 +30,25 @@ describe('POST /api/auth/login', () => {
   });
 
   it('returns 401 for an unknown email', async () => {
-    const res = await request(createApp()).post('/api/auth/login').send({ email: 'mallory@evil' });
+    const res = await request(createApp({ config: testConfig }))
+      .post('/api/auth/login')
+      .send({ email: 'mallory@evil' });
 
     expect(res.status).toBe(401);
     expect(res.body).toHaveProperty('error');
   });
 
   it('returns 400 for an invalid body', async () => {
-    const res = await request(createApp()).post('/api/auth/login').send({ email: 42 });
+    const res = await request(createApp({ config: testConfig }))
+      .post('/api/auth/login')
+      .send({ email: 42 });
 
     expect(res.status).toBe(400);
     expect(res.body).toHaveProperty('error');
   });
 
   it('returns 400 without leaking a stack trace for malformed JSON', async () => {
-    const res = await request(createApp())
+    const res = await request(createApp({ config: testConfig }))
       .post('/api/auth/login')
       .set('Content-Type', 'application/json')
       .send('{"email":');

@@ -14,6 +14,7 @@ export function assistantRouter(provider: LlmProvider): Router {
   const router = Router();
 
   // WORKSHOP(A): no requireAuth and no rate limit on an endpoint that spends provider money.
+  // WORKSHOP(A): requireAuth(config.authSecret) is ready in ../auth/require-auth.ts; wire it here.
   router.post('/', async (req, res) => {
     // WORKSHOP(D): logs every header (Authorization too, once auth exists) and the full body.
     logger.info('assistant request', { headers: req.headers, body: req.body as unknown });

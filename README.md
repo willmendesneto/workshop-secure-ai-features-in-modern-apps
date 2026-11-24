@@ -35,10 +35,10 @@ No passwords: the login is fake on purpose. All company data is fictional.
 | `step-4` | D: negative tests and logs without secrets (C solved) | 40–52   |
 | `main`   | D solved, closing                                     | 52–60   |
 
-Switch checkpoints (discards nothing, your work goes to the stash):
+Switch checkpoints (discards nothing: your work, including new files, goes to the stash):
 
 ```sh
-git stash && git checkout step-2
+git stash -u && git checkout step-2
 npm ci               # only if package-lock.json changed
 ```
 
@@ -73,6 +73,10 @@ OPENAI_API_KEY=...
 
 The API refuses to start if the selected provider has no key. Tests always use the mock.
 
+> **Warning:** never put a real key in `.env` while on `step-1`..`step-4`: those endpoints are
+> insecure on purpose. Use a capped, short-lived key, and only on `main`. The servers listen on
+> `127.0.0.1` only (`HOST` in `.env`), so they are not exposed to your network.
+
 ## Scripts
 
 | Script                    | What it does                                                  |
@@ -96,6 +100,16 @@ More docs: [docs/README.md](docs/README.md).
 lsof -i :3000 -i :4200      # find the PID
 kill <PID>
 ```
+
+On Windows (cmd or PowerShell):
+
+```sh
+netstat -ano | findstr :3000
+taskkill /PID <pid> /F
+```
+
+**Switching `MOCK_SCENARIO`** — edit `MOCK_SCENARIO=` in `.env` and restart `npm run dev` (works
+on every OS). On macOS/Linux you can also run `MOCK_SCENARIO=malformed npm run dev` for one run.
 
 **Wrong Node version** — `npm ci` fails with `EBADENGINE ... Unsupported engine` because
 `engine-strict` is on. Run `nvm use` (reads `.nvmrc`, Node 24) and retry.
