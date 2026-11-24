@@ -22,6 +22,8 @@ demo and is insecure in production. Attendees fix it in four exercises (A–D), 
 - **Branches are linear:** `step-1` → `step-2` → `step-3` → `step-4` → `main`. Fix on the
   earliest branch that has the problem, then restack the later ones (see
   [docs/maintainers.md](docs/maintainers.md)). Never fix only on `main`.
+- **`main` is the answer key; keep it green:** all exercises solved, no `WORKSHOP(` markers,
+  `npm run validate` and `npm run check:step` (step 5 runs A–D) pass.
 - **Every intentional flaw has a marker:** `// WORKSHOP(X): <hint>` (or `<!-- WORKSHOP(X): ... -->`
   in templates), `X` = `A|B|C|D`. Solving an exercise removes its markers.
 - **Never commit real keys.** Fake keys use the `wsk_demo_` prefix only. No `.env` in git.

@@ -1,4 +1,4 @@
-# Architecture (step 4)
+# Architecture (main)
 
 > These docs describe the branch you are on. Each checkpoint branch updates them.
 
@@ -12,7 +12,7 @@ The **fake provider** (`/fake-provider/...`, `apps/api/src/routes/fake-provider.
 third-party LLM API (Gemini-shaped) so the workshop runs offline. It is not part of the app and
 the web no longer calls it.
 
-## Request flow on step 4 (Exercises A, B and C solved)
+## Request flow on main (Exercises A–D solved)
 
 ```mermaid
 sequenceDiagram
@@ -40,6 +40,7 @@ sequenceDiagram
     API-->>UI: 502 { error: invalid_model_output, fallback }
   end
   Note over UI: renders with {{ }} only, error state on 4xx/5xx
+  Note over API: on finish: one log line (method, path, userId, tenantId, status, durationMs)
 ```
 
 A valid `Insight` is not a safe one: the schema checks shape, not intent. See
@@ -51,7 +52,15 @@ A valid `Insight` is not a safe one: the schema checks shape, not intent. See
 the app error handler maps to `403 { error: 'forbidden' }`. Optional database layer:
 [rls.md](rls.md).
 
-Still open: the assistant route logs headers and body, and the negative tests are `it.todo` (D).
+Logs: the assistant router writes one `assistant request` line per request when the response
+finishes (method, path, userId, tenantId, status, durationMs), never headers, tokens, the
+question, the report or model text. `apps/api/src/logger.ts` also redacts keys such as
+`authorization`, `token`, `apiKey`, `secret` and `password` as a safety net.
+
+Tests: `apps/api/test/*.spec.ts` cover every control with negative cases (401, 403, 400, 429,
+502, 504, logs). `apps/api/test/setup.ts` replaces `fetch` so any network call fails; supertest
+talks to the in-process app. Summary of the changes since `step-1`:
+[before-after.md](before-after.md). Production checklist: [CHECKLIST.md](../CHECKLIST.md).
 
 ## Trust boundaries
 

@@ -33,7 +33,7 @@ No passwords: the login is fake on purpose. All company data is fictional.
 | `step-2` | B: validate input and model output (A solved)         | 15–25   |
 | `step-3` | C: tenant and permissions from the session (B solved) | 25–40   |
 | `step-4` | D: negative tests and logs without secrets (C solved) | 40–52   |
-| `main`   | D solved, closing                                     | 52–60   |
+| `main`   | D solved, closing (answer key)                        | 52–60   |
 
 Switch checkpoints (discards nothing: your work, including new files, goes to the stash):
 
@@ -43,6 +43,10 @@ npm ci               # only if package-lock.json changed
 ```
 
 Check your exercise: `npm run check:step` (or `node scripts/check-step.mjs --exercise B`).
+On `main` (`workshop.json` step 5) it runs the checks of every exercise, A to D.
+
+After the workshop: [CHECKLIST.md](CHECKLIST.md) (production checklist for AI features) and
+[docs/before-after.md](docs/before-after.md) (what changed from `step-1` to `main`).
 
 ## Mock provider (default, offline)
 

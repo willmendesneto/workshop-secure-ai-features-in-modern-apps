@@ -1,92 +1,42 @@
-# Exercise D: negative tests and logs without secrets
+# You're done
 
-**Time box:** 40–52 min · **Branch:** `step-4` · **Next:** `main`
+**Time box:** 52–60 min (closing) · **Branch:** `main` (answer key for all four exercises)
 
-## Objective
+## What was fixed
 
-A–C work today. Stop the assistant route from writing secrets to the logs, and write the first
-negative tests that fail the build when someone removes a control.
+- **A:** the browser no longer holds the provider key or builds the prompt; it calls
+  `POST /api/assistant`, which requires a session, is rate limited per user and times out (504).
+- **B:** the question is bounded on the server (1–2,000 chars, 400) and model output is parsed
+  against `InsightSchema`, failing closed with a fallback (502).
+- **C:** tenant and role come from the session; `assertCanRead` runs before any data is read
+  (403 for another tenant or a viewer).
+- **D:** every control has an offline negative test (no `it.todo` left, `fetch` blocked in tests)
+  and the assistant log line has ids, status and duration only, never tokens or content.
 
-## What is insecure right now
+## Where to look
 
-1. The assistant route **logs every request header and the full body**: the `Authorization`
-   header (a valid bearer token) ends up in your log platform, readable by anyone with log
-   access. **(D)**
-2. Four core negative tests are still **`it.todo`**: nothing stops a refactor from removing the
-   tenant check or the rate limit, or from bringing the unsafe log line back. **(D)**
+- [CHECKLIST.md](CHECKLIST.md): the production checklist for AI features (9 items).
+- [docs/before-after.md](docs/before-after.md): `step-1` → `main`, control by control, with code.
+- [docs/trust-boundaries.md](docs/trust-boundaries.md): the four boundaries and their controls.
+- [docs/rls.md](docs/rls.md): Row-Level Security as an extra tenant layer in the database.
 
-## Files to change
-
-```sh
-grep -rn "WORKSHOP(D)" apps
-```
-
-## Steps
-
-1. **Fix the log line** in `apps/api/src/routes/assistant.ts`. Replace the line that logs
-   `headers` and `body` with one line per request, written once the response finishes (for
-   example in `res.on('finish', ...)`). Log `method`, `path`, `userId`, `tenantId`, `status` and
-   `durationMs`. Never tokens, headers, keys, the question, the report or model text.
-2. **Write the 4 core tests.** Replace each `it.todo` with a real test. Each todo names the request,
-   the config override and the expected status or body. The comment at the top of each file has
-   the hints.
-   - `apps/api/test/logs.spec.ts`: the bearer token and the `Authorization` header never appear in
-     the logs, and the single `assistant request` line has the fields from step 1 and no body.
-   - `apps/api/test/tenant.spec.ts`: alice@acme with body `tenantId: 'globex'` gets 403
-     `{ error: 'forbidden' }`.
-   - `apps/api/test/limits.spec.ts`: with `rateLimit.max` 3, the 4th request gets 429
-     `{ error: 'rate_limited' }`.
-
-   Assert on controls, not wording: status codes, exact error bodies and log fields. Never assert
-   on the text of `insight.summary`. `auth.spec.ts` and `schema.spec.ts` each have one worked
-   example to copy.
-
-3. Run the check below.
-
-## Hints
-
-- Helpers in `apps/api/test/helpers.ts`: `testConfig`, `bearer('alice@acme')`, `tokenFor(email)`,
-  `TEST_SECRET`.
-- Config overrides per test:
-  `createApp({ config: { ...testConfig, rateLimit: { windowMs: 60_000, max: 3 } } })`. Send all 4
-  requests to the same app, because a new app resets the counter.
-- Capture logs:
-
-  ```ts
-  const write = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
-  // ...send the request with supertest...
-  const logs = write.mock.calls.map(([chunk]) => String(chunk)).join('');
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-  ```
-
-- Run one file: `npm test -w @workshop/api -- test/logs.spec.ts`
-  (do not pass `-w` to `vitest` itself: there it means watch mode).
-- A test without an `expect` fails, and `it.skip` / `it.only` fail the check.
-- Optional: add redaction to `apps/api/src/logger.ts` so keys like `authorization`, `token`,
-  `apiKey` and `key` are written as `"[REDACTED]"` even if someone logs them by mistake.
-- Tests are offline: mock provider only, no network, no real keys.
-
-## Done when
+## Check it
 
 ```sh
-npm run check:step     # safe log line + no it.todo/.skip/.only in the 5 core specs + npm test green
+npm run check:step     # step 5: runs the checks of every exercise, A to D, and prints a summary
+npm run validate       # what CI runs
 ```
+
+## Finished early? Extension ideas
+
+1. **Rate-limit policy per role and tenant:** propose limits (for example analysts 10/min, a
+   tenant-wide budget per day) and implement one with a test that proves the 429.
+2. **More negative tests:** a token signed with another secret, a body with extra fields, a
+   provider that throws, `injection-echo` on the web side (the payload renders as text).
+3. **Prompt-injection classifier:** add a cheap check on the question as an extra signal (log the
+   verdict, maybe ask for confirmation). It is a signal, not a control: keep every check above.
+4. **Structured audit log:** who asked what kind of question for which tenant, with outcome and
+   reason codes, stored apart from debug logs and without the question text.
 
 > A control without a test is a control you will lose in the next refactor. A log line is a data
 > export: only write what you would publish.
-
-## Extras (after the workshop)
-
-Not checked by `check:step`, and not part of the 12 minutes. Come back to `step-4` later and
-replace the `it.todo` in `apps/api/test/extras/*.extra.spec.ts`: missing, tampered and expired
-tokens, viewer permissions, the report route, invalid model output, the question size limit, the
-timeout, the provider key and report content in logs. Compare with `main` when done (see
-`EXTRAS.md` on `main`).
-
-## Stuck?
-
-```sh
-git stash -u && git checkout main
-```

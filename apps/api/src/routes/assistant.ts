@@ -3,6 +3,7 @@ import {
   type AssistantFailure,
   type AssistantSuccess,
   InsightSchema,
+  type SessionUser,
 } from '@workshop/contracts';
 import { Router } from 'express';
 import { rateLimit } from 'express-rate-limit';
@@ -57,10 +58,25 @@ export function assistantRouter(provider: LlmProvider, config: AssistantConfig):
     },
   });
 
-  router.post('/', requireAuth(config.authSecret), limiter, async (req, res) => {
-    // WORKSHOP(D): logs every header (Authorization included) and the full body.
-    logger.info('assistant request', { headers: req.headers, body: req.body as unknown });
+  // One safe line per request, written when the response is sent (401, 429 and 403 included).
+  // Never headers, tokens, keys, the question, the report or the model text.
+  router.use((req, res, next) => {
+    const started = performance.now();
+    res.on('finish', () => {
+      const user = res.locals.user as SessionUser | undefined;
+      logger.info('assistant request', {
+        method: req.method,
+        path: req.originalUrl.split('?')[0],
+        userId: user?.userId,
+        tenantId: user?.tenantId,
+        status: res.statusCode,
+        durationMs: Math.round(performance.now() - started),
+      });
+    });
+    next();
+  });
 
+  router.post('/', requireAuth(config.authSecret), limiter, async (req, res) => {
     const body = AssistantRequestSchema.safeParse(req.body);
     if (!body.success) {
       // Paths only: never echo the input back.
