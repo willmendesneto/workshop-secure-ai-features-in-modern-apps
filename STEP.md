@@ -64,5 +64,5 @@ npm run check:step     # tamper -> 403, Carol -> 403, Bob gets Globex data
 ## Stuck?
 
 ```sh
-git stash && git checkout step-4
+git stash -u && git checkout step-4
 ```

@@ -1,7 +1,8 @@
 # REST Client (VS Code: humao.rest-client). Start the app first: npm run dev
 # Exercise C: the tenant and the permissions must come from the session, not from the body.
-# Before Exercise C every call below returns 200. After Exercise C the tampered and viewer calls
-# return 403; the last request (Alice, no tenantId) is the control and stays 200.
+# Before Exercise C the tamper and viewer calls return 200 (that is the bug) and the control call
+# returns 400 (tenantId is still required). After Exercise C: tamper and viewer calls return 403,
+# and the control returns 200 because the tenant now comes from the session.
 
 @api = http://localhost:3000
 
@@ -38,16 +39,16 @@ POST {{api}}/api/assistant
 Content-Type: application/json
 Authorization: Bearer {{carol.response.body.token}}
 
-{ "question": "Summarize performance and highlight key risks." }
+{ "question": "Summarize performance and highlight key risks.", "tenantId": "acme" }
 
 ### Viewer: carol fetches the acme risk report (expected after C: 403)
 POST {{api}}/api/data/report
 Content-Type: application/json
 Authorization: Bearer {{carol.response.body.token}}
 
-{}
+{ "tenantId": "acme" }
 
-### Control: alice without tenantId (expected after C: 200, acme taken from the session)
+### Control: alice without tenantId (before C: 400; after C: 200, acme taken from the session)
 POST {{api}}/api/assistant
 Content-Type: application/json
 Authorization: Bearer {{alice.response.body.token}}
