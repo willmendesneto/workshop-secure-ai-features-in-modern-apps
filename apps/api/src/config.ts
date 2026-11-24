@@ -40,9 +40,9 @@ export interface Config {
   mockSlowMs: number;
   /** Key the simulated third-party provider expects in `?key=`. */
   fakeProviderKey: string;
-  // WORKSHOP(A): already configured, not enforced yet
+  /** Provider calls are aborted after this many milliseconds (504 for the client). */
   assistantTimeoutMs: number;
-  // WORKSHOP(A): already configured, not enforced yet
+  /** Assistant requests allowed per user in each window (429 above it). */
   rateLimit: { windowMs: number; max: number };
   geminiApiKey: string | undefined;
   geminiModel: string;

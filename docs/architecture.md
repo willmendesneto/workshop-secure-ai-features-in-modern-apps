@@ -1,4 +1,6 @@
-# Architecture (step 1)
+# Architecture (step 2)
+
+> These docs describe the branch you are on. Each checkpoint branch updates them.
 
 Three pieces in one npm workspace:
 
@@ -7,34 +9,35 @@ Three pieces in one npm workspace:
 - **contracts** (`packages/contracts`): Zod schemas shared by both (`Insight`, `CompanyReport`, ...).
 
 The **fake provider** (`/fake-provider/...`, `apps/api/src/routes/fake-provider.ts`) simulates a
-third-party LLM API (Gemini-shaped) so the workshop runs offline. It is not part of the app.
+third-party LLM API (Gemini-shaped) so the workshop runs offline. It is not part of the app and
+the web no longer calls it.
 
-## Request flow on step 1 (insecure on purpose)
+## Request flow on step 2 (Exercise A solved)
 
 ```mermaid
 sequenceDiagram
   autonumber
   box Browser (untrusted)
-    participant UI as Angular app<br/>key in environment.ts
+    participant UI as Angular app<br/>no key, no prompt
   end
   box API (trusted)
-    participant API as Express API
+    participant API as Express API<br/>key + prompt live here
   end
   box Third party
-    participant P as LLM provider<br/>(fake-provider / Gemini)
+    participant P as LLM provider<br/>(mock / Gemini / OpenAI)
   end
   UI->>API: POST /api/auth/login { email }
   API-->>UI: { token, user }
-  UI->>API: POST /api/data/report { tenantId }  (no auth)
-  API-->>UI: full report incl. risks
-  Note over UI: builds the prompt in the browser
-  UI->>P: POST models/gemini-demo:generateContent?key=wsk_demo_...
-  P-->>UI: candidates[0].content.parts[0].text (model output = untrusted)
+  UI->>API: POST /api/assistant { question, tenantId }<br/>Authorization: Bearer token
+  Note over API: requireAuth (401) -> rate limit per user (429)
+  API->>P: prompt built on the server, AbortSignal (504 after assistantTimeoutMs)
+  P-->>API: model text (untrusted)
+  API-->>UI: { raw } (not validated yet: Exercise B)
   Note over UI: JSON.parse + cast to Insight, no validation
 ```
 
-`POST /api/assistant { question, tenantId }` also exists and returns `{ raw }`, but it has no
-auth, no rate limit and no timeout. Exercise A moves the browser onto it.
+Still open: the question has no size limit and the output is not validated (B), `tenantId` comes
+from the body and there is no role check (C), the route logs headers and body (D).
 
 ## Trust boundaries
 

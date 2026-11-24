@@ -56,8 +56,8 @@ No key and no network needed. Pick the behaviour with `MOCK_SCENARIO` in `.env` 
 | `injection-echo` | if the question tries an injection: the system prompt, HTML and SQL |
 | `slow`           | a valid Insight after `MOCK_SLOW_MS` (default 15 s)                 |
 
-The browser on `step-1` talks to `/fake-provider/...`, a simulated third-party API served by the
-API process. It is not part of the app.
+`/fake-provider/...` is a simulated third-party API served by the API process (only the `step-1`
+browser calls it directly). It is not part of the app.
 
 ## Optional: real provider
 
@@ -89,7 +89,8 @@ The API refuses to start if the selected provider has no key. Tests always use t
 | `npm run validate`        | format check, lint, typecheck, test, build                    |
 | `npm run format`          | Prettier write                                                |
 
-HTTP samples for VS Code REST Client: [requests/login.http](requests/login.http).
+HTTP samples for VS Code REST Client: [requests/](requests/). Attack inputs for the exercises:
+[fixtures/attacks/](fixtures/attacks/README.md).
 More docs: [docs/README.md](docs/README.md).
 
 ## Common problems

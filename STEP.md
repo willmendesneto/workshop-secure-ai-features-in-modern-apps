@@ -1,71 +1,68 @@
-# Exercise A: move the provider call to the backend
+# Exercise B: validate input and model output
 
-**Time box:** 05–15 min · **Branch:** `step-1` · **Next:** `step-2`
+**Time box:** 15–25 min · **Branch:** `step-2` · **Next:** `step-3`
 
 ## Objective
 
-The assistant works in the demo. Make it safe to ship: the browser must never hold the provider
-key, and the API endpoint that spends provider money must be authenticated, limited and time-boxed.
+The provider call now lives on the server behind auth, a rate limit and a timeout. Now stop
+trusting what goes **into** the model and what comes **out** of it: bound the question, check the
+answer against the contract, and treat model text as untrusted data.
 
 ## What is insecure right now
 
-1. The Angular app calls the LLM provider **directly from the browser** with the key from
-   `apps/web/src/environments/environment.ts`. It is in the bundle and in the Network tab. **(A)**
-2. `POST /api/assistant` works, but has **no auth, no rate limit and no timeout**. **(A)**
-3. `POST /api/data/report` and `POST /api/assistant` take **`tenantId` from the request body**. **(C)**
-4. The model response goes **raw to the UI** without schema validation. **(B)**
-5. The assistant route **logs all request headers and the body** (Authorization included). **(D)**
+1. `POST /api/assistant` accepts a question of **any length and format** (empty after trimming,
+   2,500+ characters, ...). **(B)**
+2. The model response goes **raw to the UI** (`{ raw }`) without schema validation; the web casts
+   it to `Insight` and breaks on malformed output. **(B)**
+3. `POST /api/data/report` and `POST /api/assistant` take **`tenantId` from the request body**;
+   viewers can read risk reports. **(C)**
+4. The assistant route **logs all request headers and the body** (now with the Authorization
+   header). **(D)**
 
 Today you fix 1 and 2. The others are the next exercises.
 
 ## Files to change
 
 ```sh
-grep -rn "WORKSHOP(A)" apps
+grep -rn "WORKSHOP(B)" apps packages
 ```
 
 ## Steps
 
-1. **Web:** in `AssistantService`, replace steps 1–4 with a single
-   `POST /api/assistant { question, tenantId }` that sends `Authorization: Bearer <token>`
-   (the token is in `SessionService`). For now show the `raw` text parsed as JSON, as today.
-2. **Web:** delete `providerApiKey` (and the browser prompt in `app/assistant/prompt.ts`).
-   The API already builds the prompt in `apps/api/src/assistant/prompt.ts`.
-3. **API:** wire the existing `requireAuth(config.authSecret)`
-   (`apps/api/src/auth/require-auth.ts`) into the assistant route. It answers `401` without a
-   valid `Authorization: Bearer <token>`; read the user with `sessionUser(res)`.
-4. **API:** add a rate limiter with `express-rate-limit` using `config.rateLimit`
-   (`windowMs`, `max`), keyed by `sessionUser(res).userId`. Above the limit it must answer `429`.
-5. **API:** time-box the provider call: create an `AbortController`, abort after
-   `config.assistantTimeoutMs`, pass `{ signal }` to `provider.generate`, and answer
-   `504 { error: 'timeout' }` when it aborts. Clear the timer when done.
-6. Run the checks below.
+1. **Contracts:** in `packages/contracts/src/index.ts`, make `AskRequestSchema.question` trimmed,
+   non-empty and at most 2,000 characters.
+2. **API:** validate the request body with `AskRequestSchema` (extend it with `tenantId` for now)
+   and answer `400` when it fails. The server check is the control.
+3. **API:** validate the model output: `JSON.parse(raw)` inside `try/catch`, then
+   `InsightSchema.safeParse(...)`. On failure answer
+   `502 { error: 'invalid_model_output', fallback: { message } }` (`AssistantFailure`); on success
+   answer `200 { insight }` (`AssistantSuccess`).
+4. **Web:** use the contract types (`AssistantSuccess`, `AssistantFailure`) in `AssistantService`
+   instead of parsing `raw`. Show an error state with the fallback message instead of breaking.
+   Optionally use `AskRequestSchema` for a client-side hint (that is UX, not security).
+5. **Never execute model text:** no SQL, no shell commands, no HTML. Render it with `{{ }}`
+   (Angular escapes it), never `innerHTML`, never pass it to `eval`, `exec` or a database.
+6. Try the fixtures in `fixtures/attacks/` (see its README), then run the checks below.
 
 ## Hints
 
-- `express-rate-limit` is already installed in `apps/api`.
-- `requireAuth` is already written (it calls `verifyToken` from `apps/api/src/auth/token.ts`).
-  `assistantRouter` needs `config` to use it: pass it from `createApp`.
-- Put `requireAuth` before the limiter on the route, so `sessionUser(res)` is set in `keyGenerator`.
-- `config.assistantTimeoutMs` and `config.rateLimit` already exist in `apps/api/src/config.ts`.
-- Create the limiter inside `createApp` (per app instance), so each test gets a fresh one.
-- An aborted provider call rejects with an error whose `name` is `'AbortError'`.
-- `createApp({ config })` accepts overrides, so tests can set `rateLimit.max: 3`.
+- `MOCK_SCENARIO=malformed npm run dev` returns `fixtures/attacks/malformed-response.json`.
+- `MOCK_SCENARIO=injection-echo npm run dev` + `fixtures/attacks/goal-hijack.txt`: the answer
+  **still passes the schema**. A schema checks shape, not intent: the output stays untrusted data.
+- `z.string().trim().min(1).max(2000)` trims before it checks the length.
+- `requests/assistant.http` has an authenticated call and a goal-hijack call.
+- Log the failure reason (`name`, issue paths), never the raw model text.
 
 ## Done when
 
 ```sh
-npm run check:step     # 401 without token, 200 with token, 429 above the limit, 504 on timeout
+npm run check:step     # 400 for 2,001 chars, 502 invalid_model_output on malformed, 200 { insight }
 ```
 
-`check:step` also runs the bundle scan (`check:bundle`): no key-like string in the web bundle.
-
-> In real life, a key that ever shipped to a browser is leaked: **rotate it**, then move it.
+> A valid schema is not a safe answer: `injection-echo` is well-formed and still hostile.
 
 ## Stuck?
 
-Your work, including new files, goes to the stash:
-
 ```sh
-git stash -u && git checkout step-2
+git stash && git checkout step-3
 ```

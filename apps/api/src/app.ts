@@ -49,7 +49,7 @@ export function createApp(options: AppOptions = {}): Express {
 
   app.use('/api/auth', authRouter(config));
   app.use('/api/data', dataRouter());
-  app.use('/api/assistant', assistantRouter(provider));
+  app.use('/api/assistant', assistantRouter(provider, config));
 
   // Not part of the app: a simulated third-party LLM API so the workshop runs offline.
   app.use('/fake-provider', fakeProviderRouter(config));

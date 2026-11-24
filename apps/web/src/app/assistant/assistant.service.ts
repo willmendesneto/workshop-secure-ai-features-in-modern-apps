@@ -1,41 +1,50 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import type { CompanyReport, Insight, SessionUser } from '@workshop/contracts';
+import type { Insight } from '@workshop/contracts';
 import { firstValueFrom } from 'rxjs';
-import { environment } from '../../environments/environment';
-import { SYSTEM_PROMPT, buildUserPrompt } from './prompt';
+import { SessionService } from '../session/session.service';
 
-interface GeminiResponse {
-  candidates?: { content?: { parts?: { text?: string }[] } }[];
-}
-
-/** Step 1 flow: everything happens in the browser. Works in the demo, insecure in production. */
+/** The API owns the prompt, the data and the provider key. The browser only sends the question. */
 @Injectable({ providedIn: 'root' })
 export class AssistantService {
   private readonly http = inject(HttpClient);
+  private readonly sessions = inject(SessionService);
 
-  async ask(question: string, user: SessionUser): Promise<Insight> {
-    // 1. Fetch the full company report (risks included).
-    // WORKSHOP(C): the browser chooses the tenant; any tenantId in this body is trusted by the API.
-    const report = await firstValueFrom(
-      this.http.post<CompanyReport>('/api/data/report', { tenantId: user.tenantId }),
-    );
+  async ask(question: string): Promise<Insight> {
+    const session = this.sessions.session();
+    if (!session) throw new Error('Session expired, log in again.');
 
-    // 2. Build the prompt.
-    // WORKSHOP(A): prompt built in the browser; the API should own the prompt and the data context.
-    const body = {
-      systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
-      contents: [{ role: 'user', parts: [{ text: buildUserPrompt(report, question) }] }],
-    };
+    let raw: string;
+    try {
+      const response = await firstValueFrom(
+        this.http.post<{ raw: string }>(
+          '/api/assistant',
+          // WORKSHOP(C): the browser chooses the tenant; any tenantId in this body is trusted by the API.
+          { question, tenantId: session.user.tenantId },
+          { headers: { Authorization: `Bearer ${session.token}` } },
+        ),
+      );
+      raw = response.raw;
+    } catch (error) {
+      throw new Error(this.messageFor(error), { cause: error });
+    }
 
-    // 3. Call the LLM provider directly.
-    // WORKSHOP(A): direct provider call with the API key in the URL; call POST /api/assistant instead.
-    const url = `${environment.providerBaseUrl}/v1beta/models/${environment.providerModel}:generateContent?key=${environment.providerApiKey}`;
-    const response = await firstValueFrom(this.http.post<GeminiResponse>(url, body));
-
-    // 4. Trust whatever the model said.
     // WORKSHOP(B): no schema validation; parse with InsightSchema and show an error state instead.
-    const text = response.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
-    return JSON.parse(text) as Insight;
+    return JSON.parse(raw) as Insight;
+  }
+
+  private messageFor(error: unknown): string {
+    const status = error instanceof HttpErrorResponse ? error.status : 0;
+    switch (status) {
+      case 401:
+        this.sessions.logout();
+        return 'Session expired, log in again.';
+      case 429:
+        return 'Too many requests, wait a minute.';
+      case 504:
+        return 'The assistant took too long.';
+      default:
+        return 'The assistant could not answer. Try again.';
+    }
   }
 }

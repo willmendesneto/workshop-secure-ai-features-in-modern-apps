@@ -21,7 +21,7 @@ Content-Type: application/json
 
 { "email": "carol@acme" }
 
-### Ask the assistant (step 1: works without the token; Exercise A makes it required)
+### Ask the assistant (requires the token since Exercise A)
 POST {{api}}/api/assistant
 Content-Type: application/json
 Authorization: Bearer {{alice.response.body.token}}

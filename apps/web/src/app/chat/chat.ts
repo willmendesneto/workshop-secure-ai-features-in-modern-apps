@@ -29,9 +29,11 @@ export class Chat {
     this.error.set(null);
     this.insight.set(null);
     try {
-      this.insight.set(await this.assistant.ask(this.question(), this.user()));
-    } catch {
-      this.error.set('The assistant could not answer. Try again.');
+      this.insight.set(await this.assistant.ask(this.question()));
+    } catch (error) {
+      this.error.set(
+        error instanceof Error ? error.message : 'The assistant could not answer. Try again.',
+      );
     } finally {
       this.loading.set(false);
     }

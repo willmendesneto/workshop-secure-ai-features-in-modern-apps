@@ -1,4 +1,3 @@
-// Ready for Exercise A: not wired into any route yet.
 import type { SessionUser } from '@workshop/contracts';
 import type { RequestHandler, Response } from 'express';
 import { verifyToken } from './token.js';

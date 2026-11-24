@@ -1,6 +1,9 @@
 import { Router } from 'express';
+import { rateLimit } from 'express-rate-limit';
 import { z } from 'zod';
 import { buildPrompt } from '../assistant/prompt.js';
+import { requireAuth, sessionUser } from '../auth/require-auth.js';
+import type { Config } from '../config.js';
 import { getReport } from '../data/reports.js';
 import { logger } from '../logger.js';
 import type { LlmProvider } from '../providers/types.js';
@@ -10,13 +13,25 @@ const AssistantRequestSchema = z.object({
   tenantId: z.string().min(1), // WORKSHOP(C): tenantId from the payload; take it from the session.
 });
 
-export function assistantRouter(provider: LlmProvider): Router {
+type AssistantConfig = Pick<Config, 'authSecret' | 'assistantTimeoutMs' | 'rateLimit'>;
+
+export function assistantRouter(provider: LlmProvider, config: AssistantConfig): Router {
   const router = Router();
 
-  // WORKSHOP(A): no requireAuth and no rate limit on an endpoint that spends provider money.
-  // WORKSHOP(A): requireAuth(config.authSecret) is ready in ../auth/require-auth.ts; wire it here.
-  router.post('/', async (req, res) => {
-    // WORKSHOP(D): logs every header (Authorization too, once auth exists) and the full body.
+  // Per user, not per IP: runs after requireAuth, so the session user is always there.
+  const limiter = rateLimit({
+    windowMs: config.rateLimit.windowMs,
+    limit: config.rateLimit.max,
+    standardHeaders: 'draft-8',
+    legacyHeaders: false,
+    keyGenerator: (_req, res) => sessionUser(res).userId,
+    handler: (_req, res) => {
+      res.status(429).json({ error: 'rate_limited' });
+    },
+  });
+
+  router.post('/', requireAuth(config.authSecret), limiter, async (req, res) => {
+    // WORKSHOP(D): logs every header (Authorization included) and the full body.
     logger.info('assistant request', { headers: req.headers, body: req.body as unknown });
 
     const body = AssistantRequestSchema.safeParse(req.body);
@@ -25,21 +40,33 @@ export function assistantRouter(provider: LlmProvider): Router {
       return;
     }
 
-    // WORKSHOP(C): no assertCanRead: any caller can ask about any tenant (viewers included).
+    // WORKSHOP(C): no assertCanRead: any signed-in user can ask about any tenant (viewers included).
     const report = getReport(body.data.tenantId);
     if (!report) {
       res.status(404).json({ error: 'Unknown tenant' });
       return;
     }
 
+    const controller = new AbortController();
+    const timer = setTimeout(() => {
+      controller.abort();
+    }, config.assistantTimeoutMs);
     let raw: string;
     try {
-      // WORKSHOP(A): no timeout: pass an AbortSignal and give up after config.assistantTimeoutMs.
-      raw = await provider.generate(buildPrompt(report, body.data.question));
+      raw = await provider.generate(buildPrompt(report, body.data.question), {
+        signal: controller.signal,
+      });
     } catch (error) {
-      logger.error('provider failed', { name: error instanceof Error ? error.name : 'unknown' });
-      res.status(502).json({ error: 'provider_error' });
+      const name = error instanceof Error ? error.name : 'unknown';
+      logger.error('provider failed', { name });
+      if (name === 'AbortError') {
+        res.status(504).json({ error: 'timeout' });
+      } else {
+        res.status(502).json({ error: 'provider_error' });
+      }
       return;
+    } finally {
+      clearTimeout(timer);
     }
 
     // WORKSHOP(B): raw model text goes to the client unvalidated; parse it with InsightSchema.

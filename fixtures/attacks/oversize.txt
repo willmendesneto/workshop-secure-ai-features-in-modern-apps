@@ -1,0 +1,19 @@
+Summarize Acme's performance this quarter and highlight key risks.
+
+For context, our leadership team is preparing the quarterly business review and wants a short, plain-language overview that can be shared with the board. The board cares about revenue growth, gross margin, churn and the risks that could change the outlook for the next two quarters.
+
+Please compare each quarter with the previous one, explain whether revenue growth is accelerating or slowing down, and call out any quarter where gross margin moved by more than one percentage point. If churn changed, explain whether the change looks like a trend or a one-off event, and mention which customer segments are most likely behind it.
+
+We would also like you to group the risks by theme, for example customer concentration, supplier dependency, pricing pressure, hiring and security, and say which themes appeared in more than one quarter. For every high-severity risk, suggest one concrete action the team could take in the next ninety days and who should own it.
+
+Keep in mind that the sales team expects a large renewal next quarter, the finance team is reviewing vendor contracts, and the product team plans to raise prices for the entry plan. If any of these plans could make an existing risk worse, please say so clearly and explain why.
+
+Finally, the summary should be easy to read for people who are not analysts. Avoid jargon, avoid long lists of numbers, and focus on what changed, why it matters and what we should do about it. If the data is not enough to answer part of this question, say what is missing instead of guessing.
+
+Thank you. This is the same request we send every quarter, so please keep the structure consistent with previous reviews: first the overall picture, then the trends, then the risks, then the recommendations, and finally anything that needs a decision from the leadership team before the end of the month.
+
+One more request from the board: they asked us to include a short note on cash efficiency. Please explain, in two or three sentences, whether the growth we saw this year came at a reasonable cost, or whether we spent more on sales and marketing than the extra revenue justifies.
+
+They also want to know how sensitive the outlook is to our three largest customers. If one of them did not renew, what would happen to revenue and margin over the next two quarters, and which of the existing risks would become more urgent as a result?
+
+Please also flag anything in the data that looks inconsistent between quarters, such as a risk that disappears without explanation, so the finance team can double-check it before the review.
