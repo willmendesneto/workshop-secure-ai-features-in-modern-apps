@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import type { Insight } from '@workshop/contracts';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { type Insight, MAX_QUESTION_LENGTH } from '@workshop/contracts';
 import { AssistantService } from '../assistant/assistant.service';
 
 @Component({
@@ -14,6 +14,9 @@ export class Chat {
   protected readonly question = signal(
     "Summarize Acme's performance this quarter and highlight key risks.",
   );
+  protected readonly maxLength = MAX_QUESTION_LENGTH;
+  /** UX hint only: the API enforces the limit. */
+  protected readonly tooLong = computed(() => this.question().trim().length > MAX_QUESTION_LENGTH);
   protected readonly loading = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly insight = signal<Insight | null>(null);

@@ -1,0 +1,27 @@
+# REST Client (VS Code: humao.rest-client). Start the app first: npm run dev
+# Exercise B: the API rejects questions longer than 2,000 characters (after trimming) with 400.
+# REST Client cannot embed a file inside a JSON string, so the long question is inlined below
+# (2079 characters). For a realistic one, paste fixtures/attacks/oversize.txt into the UI.
+
+@api = http://localhost:3000
+
+### Login as alice (analyst, acme)
+# @name alice
+POST {{api}}/api/auth/login
+Content-Type: application/json
+
+{ "email": "alice@acme" }
+
+### Oversize question (expected: 400 { error: "invalid_request", issues: ["question"] })
+POST {{api}}/api/assistant
+Content-Type: application/json
+Authorization: Bearer {{alice.response.body.token}}
+
+{ "question": "Please analyse every quarter in detail. Please analyse every quarter in detail. Please analyse every quarter in detail. Please analyse every quarter in detail. Please analyse every quarter in detail. Please analyse every quarter in detail. Please analyse every quarter in detail. Please analyse every quarter in detail. Please analyse every quarter in detail. Please analyse every quarter in detail. Please analyse every quarter in detail. Please analyse every quarter in detail. Please analyse every quarter in detail. Please analyse every quarter in detail. Please analyse every quarter in detail. Please analyse every quarter in detail. Please analyse every quarter in detail. Please analyse every quarter in detail. Please analyse every quarter in detail. Please analyse every quarter in detail. Please analyse every quarter in detail. Please analyse every quarter in detail. Please analyse every quarter in detail. Please analyse every quarter in detail. Please analyse every quarter in detail. Please analyse every quarter in detail. Please analyse every quarter in detail. Please analyse every quarter in detail. Please analyse every quarter in detail. Please analyse every quarter in detail. Please analyse every quarter in detail. Please analyse every quarter in detail. Please analyse every quarter in detail. Please analyse every quarter in detail. Please analyse every quarter in detail. Please analyse every quarter in detail. Please analyse every quarter in detail. Please analyse every quarter in detail. Please analyse every quarter in detail. Please analyse every quarter in detail. Please analyse every quarter in detail. Please analyse every quarter in detail. Please analyse every quarter in detail. Please analyse every quarter in detail. Please analyse every quarter in detail. Please analyse every quarter in detail. Please analyse every quarter in detail. Please analyse every quarter in detail. Please analyse every quarter in detail. Please analyse every quarter in detail. Please analyse every quarter in detail. Please analyse every quarter in detail.", "tenantId": "acme" }
+
+### Blank question (expected: 400, the schema trims before it checks min(1))
+POST {{api}}/api/assistant
+Content-Type: application/json
+Authorization: Bearer {{alice.response.body.token}}
+
+{ "question": "   ", "tenantId": "acme" }

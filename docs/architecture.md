@@ -1,4 +1,4 @@
-# Architecture (step 2)
+# Architecture (step 3)
 
 > These docs describe the branch you are on. Each checkpoint branch updates them.
 
@@ -12,7 +12,7 @@ The **fake provider** (`/fake-provider/...`, `apps/api/src/routes/fake-provider.
 third-party LLM API (Gemini-shaped) so the workshop runs offline. It is not part of the app and
 the web no longer calls it.
 
-## Request flow on step 2 (Exercise A solved)
+## Request flow on step 3 (Exercises A and B solved)
 
 ```mermaid
 sequenceDiagram
@@ -29,15 +29,23 @@ sequenceDiagram
   UI->>API: POST /api/auth/login { email }
   API-->>UI: { token, user }
   UI->>API: POST /api/assistant { question, tenantId }<br/>Authorization: Bearer token
-  Note over API: requireAuth (401) -> rate limit per user (429)
+  Note over API: requireAuth (401) -> rate limit per user (429)<br/>AskRequestSchema: trimmed, 1–2,000 chars (400)
   API->>P: prompt built on the server, AbortSignal (504 after assistantTimeoutMs)
   P-->>API: model text (untrusted)
-  API-->>UI: { raw } (not validated yet: Exercise B)
-  Note over UI: JSON.parse + cast to Insight, no validation
+  Note over API: JSON.parse + InsightSchema.safeParse
+  alt valid Insight
+    API-->>UI: 200 { insight }
+  else malformed
+    API-->>UI: 502 { error: invalid_model_output, fallback }
+  end
+  Note over UI: renders with {{ }} only, error state on 4xx/5xx
 ```
 
-Still open: the question has no size limit and the output is not validated (B), `tenantId` comes
-from the body and there is no role check (C), the route logs headers and body (D).
+A valid `Insight` is not a safe one: the schema checks shape, not intent. See
+[trust-boundaries.md](trust-boundaries.md).
+
+Still open: `tenantId` comes from the body and there is no role check (C), the route logs headers
+and body (D).
 
 ## Trust boundaries
 

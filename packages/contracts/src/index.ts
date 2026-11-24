@@ -13,9 +13,12 @@ export const InsightSchema = z.object({
 });
 export type Insight = z.infer<typeof InsightSchema>;
 
+/** Longest question the API accepts (after trimming). */
+export const MAX_QUESTION_LENGTH = 2000;
+
 /** Body of POST /api/assistant. */
 export const AskRequestSchema = z.object({
-  question: z.string(), // WORKSHOP(B): enforce max length
+  question: z.string().trim().min(1).max(MAX_QUESTION_LENGTH),
 });
 export type AskRequest = z.infer<typeof AskRequestSchema>;
 

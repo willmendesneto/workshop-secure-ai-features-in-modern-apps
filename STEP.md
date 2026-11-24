@@ -1,69 +1,68 @@
-# Exercise B: validate input and model output
+# Exercise C: tenant and permissions from the session
 
-**Time box:** 15–25 min · **Branch:** `step-2` · **Next:** `step-3`
+**Time box:** 25–40 min · **Branch:** `step-3` · **Next:** `step-4`
 
 ## Objective
 
-The provider call now lives on the server behind auth, a rate limit and a timeout. Now stop
-trusting what goes **into** the model and what comes **out** of it: bound the question, check the
-answer against the contract, and treat model text as untrusted data.
+Input and output are validated. Now stop letting the browser decide **whose** data the assistant
+reads. The tenant and the user come from the verified session, and an explicit permission check
+runs **before** any data is loaded.
 
 ## What is insecure right now
 
-1. `POST /api/assistant` accepts a question of **any length and format** (empty after trimming,
-   2,500+ characters, ...). **(B)**
-2. The model response goes **raw to the UI** (`{ raw }`) without schema validation; the web casts
-   it to `Insight` and breaks on malformed output. **(B)**
-3. `POST /api/data/report` and `POST /api/assistant` take **`tenantId` from the request body**;
-   viewers can read risk reports. **(C)**
-4. The assistant route **logs all request headers and the body** (now with the Authorization
-   header). **(D)**
+1. `POST /api/assistant` and `POST /api/data/report` take **`tenantId` from the request body**:
+   Alice (Acme) can read Globex by changing one field. **(C)**
+2. `POST /api/data/report` has **no auth at all**, and nobody checks the role: Carol (viewer) can
+   read risk reports and ask the assistant about them. **(C)**
+3. The web sends `tenantId` in the body, as if the browser were allowed to choose. **(C)**
+4. The assistant route **logs all request headers and the body** (Authorization header included),
+   and the negative tests are still `it.todo`. **(D)**
 
-Today you fix 1 and 2. The others are the next exercises.
+Today you fix 1 to 3. The last one is the next exercise.
 
 ## Files to change
 
 ```sh
-grep -rn "WORKSHOP(B)" apps packages
+grep -rn "WORKSHOP(C)" apps packages
 ```
 
 ## Steps
 
-1. **Contracts:** in `packages/contracts/src/index.ts`, make `AskRequestSchema.question` trimmed,
-   non-empty and at most 2,000 characters.
-2. **API:** validate the request body with `AskRequestSchema` (extend it with `tenantId` for now)
-   and answer `400` when it fails. The server check is the control.
-3. **API:** validate the model output: `JSON.parse(raw)` inside `try/catch`, then
-   `InsightSchema.safeParse(...)`. On failure answer
-   `502 { error: 'invalid_model_output', fallback: { message } }` (`AssistantFailure`); on success
-   answer `200 { insight }` (`AssistantSuccess`).
-4. **Web:** use the contract types (`AssistantSuccess`, `AssistantFailure`) in `AssistantService`
-   instead of parsing `raw`. Show an error state with the fallback message instead of breaking.
-   Optionally use `AskRequestSchema` for a client-side hint (that is UX, not security).
-5. **Never execute model text:** no SQL, no shell commands, no HTML. Render it with `{{ }}`
-   (Angular escapes it), never `innerHTML`, never pass it to `eval`, `exec` or a database.
-6. Try the fixtures in `fixtures/attacks/` (see its README), then run the checks below.
+1. **Session:** in both routes, take `tenantId` and `userId` from `sessionUser(res)` (set by
+   `requireAuth`), never from the body.
+2. **Authorization:** add `apps/api/src/auth/authorize.ts` with
+   `assertCanRead(user, resource)`, for example with `resource = { kind: 'risk-report', tenantId }`.
+   Deny when `resource.tenantId !== user.tenantId` or when `user.role === 'viewer'`. Answer `403`
+   when it denies.
+3. **Order matters:** call `assertCanRead` **before** `getReport(...)` and before building the
+   prompt. A check after the read has already leaked the data into memory, logs or the prompt.
+4. **Payload tenant:** if the body still carries a `tenantId` that differs from the session,
+   answer `403`. A missing or matching `tenantId` is fine (`200`).
+5. **Data route:** protect `POST /api/data/report` with `requireAuth(config.authSecret)` and the
+   same `assertCanRead` (see how `app.ts` wires `assistantRouter`).
+6. **Web:** stop sending `tenantId` from `AssistantService`; the API knows the tenant.
+7. Replay `requests/tenant-tamper.http`, then run the checks below.
 
 ## Hints
 
-- Set `MOCK_SCENARIO=malformed` in `.env` (any OS) or run `MOCK_SCENARIO=malformed npm run dev`
-  (macOS/Linux): the mock returns `fixtures/attacks/malformed-response.json`.
-- `MOCK_SCENARIO=injection-echo npm run dev` + `fixtures/attacks/goal-hijack.txt`: the answer
-  **still passes the schema**. A schema checks shape, not intent: the output stays untrusted data.
-- `z.string().trim().min(1).max(2000)` trims before it checks the length.
-- `requests/assistant.http` has an authenticated call and a goal-hijack call.
-- Log the failure reason (`name`, issue paths), never the raw model text.
+- `sessionUser(res)` is typed `SessionUser` (`userId`, `email`, `tenantId`, `role`).
+- Throw a small `ForbiddenError` from `assertCanRead` and map it to `403 { error: 'forbidden' }`,
+  or return a boolean: either is fine as long as the check runs first.
+- `AskRequestSchema.extend({ tenantId: z.string().min(1).optional() })` keeps the body schema
+  while you compare the payload tenant to the session.
+- Users: `alice@acme` (analyst), `bob@globex` (analyst), `carol@acme` (viewer).
+- Optional extra layer: Row-Level Security in the database, see `docs/rls.md` on the next branch.
 
 ## Done when
 
 ```sh
-npm run check:step     # 400 for 2,001 chars, 502 invalid_model_output on malformed, 200 { insight }
+npm run check:step     # tamper -> 403, Carol -> 403, Bob gets Globex data
 ```
 
-> A valid schema is not a safe answer: `injection-echo` is well-formed and still hostile.
+> The browser can send any field. A permission is a server decision made from the session.
 
 ## Stuck?
 
 ```sh
-git stash -u && git checkout step-3
+git stash && git checkout step-4
 ```

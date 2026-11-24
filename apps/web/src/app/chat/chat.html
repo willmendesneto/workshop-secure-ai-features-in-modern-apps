@@ -7,9 +7,15 @@
       name="question"
       rows="4"
       [value]="question()"
+      aria-describedby="question-count"
       (input)="onInput($event)"
     ></textarea>
-    <button type="submit" [disabled]="loading()">{{ loading() ? 'Thinking…' : 'Ask' }}</button>
+    <p id="question-count" class="count" [class.over]="tooLong()">
+      {{ question().trim().length }} / {{ maxLength }}
+    </p>
+    <button type="submit" [disabled]="loading() || tooLong()">
+      {{ loading() ? 'Thinking…' : 'Ask' }}
+    </button>
   </form>
 
   <div aria-live="polite">
@@ -20,7 +26,7 @@
     }
   </div>
 
-  <!-- WORKSHOP(B): renders unvalidated model output; with MOCK_SCENARIO=malformed fields are missing or the wrong type. -->
+  <!-- Validated by the API, still untrusted text: interpolation only (Angular escapes it). -->
   @if (insight(); as result) {
   <article class="result" aria-labelledby="result-title">
     <h3 id="result-title">

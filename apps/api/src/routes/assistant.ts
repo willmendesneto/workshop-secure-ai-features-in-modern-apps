@@ -1,3 +1,9 @@
+import {
+  AskRequestSchema,
+  type AssistantFailure,
+  type AssistantSuccess,
+  InsightSchema,
+} from '@workshop/contracts';
 import { Router } from 'express';
 import { rateLimit } from 'express-rate-limit';
 import { z } from 'zod';
@@ -8,10 +14,29 @@ import { getReport } from '../data/reports.js';
 import { logger } from '../logger.js';
 import type { LlmProvider } from '../providers/types.js';
 
-const AssistantRequestSchema = z.object({
-  question: z.string().min(1), // WORKSHOP(B): no max length (limit to 2,000 chars) and no format check.
+const AssistantRequestSchema = AskRequestSchema.extend({
   tenantId: z.string().min(1), // WORKSHOP(C): tenantId from the payload; take it from the session.
 });
+
+const INVALID_OUTPUT: AssistantFailure = {
+  error: 'invalid_model_output',
+  fallback: { message: 'We could not generate a reliable insight right now. Please try again.' },
+};
+
+/** Model text is untrusted: parse it and check it against the contract. Never execute it. */
+function parseInsight(raw: string): AssistantSuccess | { reason: string } {
+  let json: unknown;
+  try {
+    json = JSON.parse(raw);
+  } catch (error) {
+    return { reason: error instanceof Error ? error.name : 'unknown' };
+  }
+  const insight = InsightSchema.safeParse(json);
+  if (!insight.success) {
+    return { reason: insight.error.issues.map((issue) => issue.path.join('.')).join(',') };
+  }
+  return { insight: insight.data };
+}
 
 type AssistantConfig = Pick<Config, 'authSecret' | 'assistantTimeoutMs' | 'rateLimit'>;
 
@@ -36,7 +61,9 @@ export function assistantRouter(provider: LlmProvider, config: AssistantConfig):
 
     const body = AssistantRequestSchema.safeParse(req.body);
     if (!body.success) {
-      res.status(400).json({ error: 'Invalid request body' });
+      // Paths only: never echo the input back.
+      const issues = body.error.issues.map((issue) => issue.path.join('.'));
+      res.status(400).json({ error: 'invalid_request', issues });
       return;
     }
 
@@ -69,8 +96,14 @@ export function assistantRouter(provider: LlmProvider, config: AssistantConfig):
       clearTimeout(timer);
     }
 
-    // WORKSHOP(B): raw model text goes to the client unvalidated; parse it with InsightSchema.
-    res.json({ raw });
+    const result = parseInsight(raw);
+    if ('reason' in result) {
+      // Log why it failed, never the model text.
+      logger.error('invalid model output', { reason: result.reason });
+      res.status(502).json(INVALID_OUTPUT);
+      return;
+    }
+    res.json(result);
   });
 
   return router;
