@@ -12,7 +12,7 @@
 
 <main class="app-main">
   @if (sessions.session(); as session) {
-  <app-chat [user]="session.user" />
+  <app-chat />
   } @else {
   <app-login />
   }

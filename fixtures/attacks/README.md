@@ -15,7 +15,7 @@ negative tests in Exercise D). All content is fictional.
 - **UI:** sign in as `alice@acme` and paste the text of a `.txt` file into the question box.
 - **HTTP:** [requests/assistant.http](../../requests/assistant.http) has a login, a normal call and
   a goal-hijack call (VS Code REST Client).
-- **Scenarios:** restart the app with a different mock behaviour:
+- **Scenarios:** set `MOCK_SCENARIO` in `.env` and restart (any OS), or on macOS/Linux:
 
 ```sh
 MOCK_SCENARIO=malformed npm run dev        # the model returns malformed-response.json

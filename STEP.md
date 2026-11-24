@@ -46,7 +46,8 @@ grep -rn "WORKSHOP(B)" apps packages
 
 ## Hints
 
-- `MOCK_SCENARIO=malformed npm run dev` returns `fixtures/attacks/malformed-response.json`.
+- Set `MOCK_SCENARIO=malformed` in `.env` (any OS) or run `MOCK_SCENARIO=malformed npm run dev`
+  (macOS/Linux): the mock returns `fixtures/attacks/malformed-response.json`.
 - `MOCK_SCENARIO=injection-echo npm run dev` + `fixtures/attacks/goal-hijack.txt`: the answer
   **still passes the schema**. A schema checks shape, not intent: the output stays untrusted data.
 - `z.string().trim().min(1).max(2000)` trims before it checks the length.
@@ -64,5 +65,5 @@ npm run check:step     # 400 for 2,001 chars, 502 invalid_model_output on malfor
 ## Stuck?
 
 ```sh
-git stash && git checkout step-3
+git stash -u && git checkout step-3
 ```

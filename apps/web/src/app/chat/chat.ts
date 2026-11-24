@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, Component, inject, input, signal } from '@angular/core';
-import type { Insight, SessionUser } from '@workshop/contracts';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import type { Insight } from '@workshop/contracts';
 import { AssistantService } from '../assistant/assistant.service';
 
 @Component({
@@ -10,8 +10,6 @@ import { AssistantService } from '../assistant/assistant.service';
 })
 export class Chat {
   private readonly assistant = inject(AssistantService);
-
-  readonly user = input.required<SessionUser>();
 
   protected readonly question = signal(
     "Summarize Acme's performance this quarter and highlight key risks.",
