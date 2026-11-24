@@ -1,0 +1,20 @@
+{
+  "name": "Secure AI Workshop",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:24",
+  "postCreateCommand": "npm ci",
+  "forwardPorts": [3000, 4200],
+  "portsAttributes": {
+    "3000": { "label": "API", "onAutoForward": "silent" },
+    "4200": { "label": "Web", "onAutoForward": "openBrowser" }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "angular.ng-template",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "humao.rest-client"
+      ]
+    }
+  }
+}

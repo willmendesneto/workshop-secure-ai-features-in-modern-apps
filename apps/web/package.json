@@ -1,0 +1,28 @@
+{
+  "name": "@workshop/web",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Angular UI for the Company Insights Assistant.",
+  "scripts": {
+    "ng": "ng",
+    "dev": "ng serve --host 0.0.0.0",
+    "start": "ng serve --host 0.0.0.0",
+    "build": "ng build",
+    "typecheck": "tsc -p tsconfig.app.json --noEmit"
+  },
+  "dependencies": {
+    "@angular/common": "^21.2.0",
+    "@angular/compiler": "^21.2.0",
+    "@angular/core": "^21.2.0",
+    "@angular/forms": "^21.2.0",
+    "@angular/platform-browser": "^21.2.0",
+    "@workshop/contracts": "0.0.0",
+    "rxjs": "~7.8.0",
+    "tslib": "^2.3.0"
+  },
+  "devDependencies": {
+    "@angular/build": "^21.2.31",
+    "@angular/cli": "^21.2.31",
+    "@angular/compiler-cli": "^21.2.0"
+  }
+}

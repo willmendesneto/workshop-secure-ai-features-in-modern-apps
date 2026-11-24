@@ -1,0 +1,45 @@
+{
+  "name": "secure-ai-workshop",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Workshop: Secure AI Features in Modern Apps",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "packageManager": "npm@11.19.1",
+  "workspaces": [
+    "packages/contracts",
+    "apps/api",
+    "apps/web"
+  ],
+  "scripts": {
+    "build:contracts": "npm run build -w @workshop/contracts",
+    "dev": "npm run build:contracts && concurrently --names contracts,api,web --prefix-colors gray,blue,magenta --kill-others-on-fail \"npm run dev -w @workshop/contracts\" \"npm run dev -w @workshop/api\" \"npm run dev -w @workshop/web\"",
+    "build": "npm run build:contracts && npm run build -w @workshop/api && npm run build -w @workshop/web",
+    "lint": "npm run build:contracts && eslint .",
+    "lint:fix": "npm run build:contracts && eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "npm run build:contracts && npm run typecheck --workspaces --if-present",
+    "test": "npm run build:contracts && npm run test --workspaces --if-present",
+    "check:bundle": "npm run build:contracts && npm run build -w @workshop/web && node scripts/check-bundle.mjs",
+    "check:bundle:ci": "node scripts/check-bundle.mjs --expect-step",
+    "validate": "npm run format:check && npm run lint && npm run typecheck && npm run test && npm run build"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^24.19.2",
+    "angular-eslint": "^21.4.0",
+    "concurrently": "^10.0.7",
+    "eslint": "^10.15.0",
+    "globals": "^17.14.0",
+    "prettier": "^3.10.1",
+    "typescript": "~5.9.2",
+    "typescript-eslint": "^8.74.0"
+  },
+  "overrides": {
+    "zod": "^4.6.7"
+  }
+}

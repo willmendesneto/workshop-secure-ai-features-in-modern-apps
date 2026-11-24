@@ -1,0 +1,5 @@
+[
+  { "userId": "u-alice", "email": "alice@acme", "tenantId": "acme", "role": "analyst" },
+  { "userId": "u-bob", "email": "bob@globex", "tenantId": "globex", "role": "analyst" },
+  { "userId": "u-carol", "email": "carol@acme", "tenantId": "acme", "role": "viewer" }
+]

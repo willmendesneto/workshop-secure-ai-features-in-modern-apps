@@ -1,0 +1,7 @@
+dist/
+.angular/
+coverage/
+node_modules/
+package-lock.json
+# Planning doc maintained outside the code style rules.
+SPECS.md

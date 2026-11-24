@@ -1,0 +1,24 @@
+:host {
+  display: block;
+  max-width: 48rem;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.app-header h1 {
+  margin: 0 0 0.25rem;
+  font-size: 1.75rem;
+}
+
+.tagline {
+  margin: 0;
+  color: #555;
+}
+
+.placeholder {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  border: 1px dashed #bbb;
+  border-radius: 0.5rem;
+  color: #666;
+}
