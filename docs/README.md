@@ -11,4 +11,5 @@ Where things live and what to read before changing them.
 | data                     | `data/*.json`, `apps/api/src/data/**`                                                        | Synthetic, fictional data only                                |
 | scripts/workshop tooling | `scripts/*.mjs`, `workshop.json`, `STEP.md`, `requests/*.http`, `fixtures/**`                | [README.md](../README.md#scripts)                             |
 | security model           | trust boundaries, controls per exercise                                                      | [trust-boundaries.md](trust-boundaries.md)                    |
+| database (optional)      | Row-Level Security as an extra tenant layer (docs only, no database in this repo)            | [rls.md](rls.md)                                              |
 | tests                    | `apps/api/test/**/*.spec.ts`, `apps/api/test/steps/*.check.ts`, `packages/contracts/test/**` | [AGENTS.md](../AGENTS.md#hard-rules)                          |

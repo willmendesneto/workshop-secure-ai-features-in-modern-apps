@@ -1,4 +1,6 @@
 import express, { type ErrorRequestHandler, type Express } from 'express';
+import { ForbiddenError } from './auth/authorize.js';
+import { sessionUser } from './auth/require-auth.js';
 import { loadConfig, type Config } from './config.js';
 import { logger } from './logger.js';
 import { createProvider } from './providers/index.js';
@@ -23,6 +25,12 @@ function clientErrorStatus(err: unknown): number | undefined {
 
 // JSON errors only. Never send stack traces or internal messages to the client.
 const errorHandler: ErrorRequestHandler = (err: unknown, _req, res, _next) => {
+  if (err instanceof ForbiddenError) {
+    // The reason is safe to log (no tenant data); the client only learns "forbidden".
+    logger.info('access denied', { reason: err.reason, userId: sessionUser(res).userId });
+    res.status(403).json({ error: 'forbidden' });
+    return;
+  }
   const status = clientErrorStatus(err);
   if (status !== undefined) {
     res.status(status).json({ error: status === 400 ? 'Invalid request' : 'Request error' });
@@ -48,7 +56,7 @@ export function createApp(options: AppOptions = {}): Express {
   });
 
   app.use('/api/auth', authRouter(config));
-  app.use('/api/data', dataRouter());
+  app.use('/api/data', dataRouter(config));
   app.use('/api/assistant', assistantRouter(provider, config));
 
   // Not part of the app: a simulated third-party LLM API so the workshop runs offline.

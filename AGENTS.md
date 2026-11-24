@@ -29,6 +29,8 @@ demo and is insecure in production. Attendees fix it in four exercises (A–D), 
 - **Tests are offline** and never assert model wording: use the mock provider, assert on status
   codes, schemas and prompts. `fetch` throws in tests (`apps/api/test/setup.ts`).
 - **No `innerHTML`** and no `bypassSecurityTrust*` in the web app. Render model output with `{{ }}`.
+- **Tenant scope always comes from the session** (`sessionUser(res)`); call `assertCanRead`
+  (`apps/api/src/auth/authorize.ts`) before reading tenant data. A body `tenantId` is only compared.
 - No `any`, no `eval`, no `child_process` in the API, no `console` in the API (use `logger`).
 
 ## Where things live

@@ -8,14 +8,16 @@ import { Router } from 'express';
 import { rateLimit } from 'express-rate-limit';
 import { z } from 'zod';
 import { buildPrompt } from '../assistant/prompt.js';
+import { assertCanRead } from '../auth/authorize.js';
 import { requireAuth, sessionUser } from '../auth/require-auth.js';
 import type { Config } from '../config.js';
 import { getReport } from '../data/reports.js';
 import { logger } from '../logger.js';
 import type { LlmProvider } from '../providers/types.js';
 
+// tenantId is optional and only compared to the session: a different one is tampering (403).
 const AssistantRequestSchema = AskRequestSchema.extend({
-  tenantId: z.string().min(1), // WORKSHOP(C): tenantId from the payload; take it from the session.
+  tenantId: z.string().min(1).optional(),
 });
 
 const INVALID_OUTPUT: AssistantFailure = {
@@ -67,8 +69,10 @@ export function assistantRouter(provider: LlmProvider, config: AssistantConfig):
       return;
     }
 
-    // WORKSHOP(C): no assertCanRead: any signed-in user can ask about any tenant (viewers included).
-    const report = getReport(body.data.tenantId);
+    // Tenant and user come from the verified session. Check BEFORE reading any data.
+    const user = sessionUser(res);
+    assertCanRead(user, { kind: 'risk-report', tenantId: body.data.tenantId ?? user.tenantId });
+    const report = getReport(user.tenantId);
     if (!report) {
       res.status(404).json({ error: 'Unknown tenant' });
       return;

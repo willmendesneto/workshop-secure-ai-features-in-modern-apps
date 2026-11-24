@@ -18,8 +18,8 @@ export class AssistantService {
       const response = await firstValueFrom(
         this.http.post<AssistantSuccess>(
           '/api/assistant',
-          // WORKSHOP(C): the browser chooses the tenant; any tenantId in this body is trusted by the API.
-          { question, tenantId: session.user.tenantId },
+          // No tenantId: the API takes the tenant from the verified session.
+          { question },
           { headers: { Authorization: `Bearer ${session.token}` } },
         ),
       );
@@ -37,6 +37,8 @@ export class AssistantService {
       case 401:
         this.sessions.logout();
         return 'Session expired, log in again.';
+      case 403:
+        return "You don't have access to risk reports.";
       case 429:
         return 'Too many requests, wait a minute.';
       case 502: {

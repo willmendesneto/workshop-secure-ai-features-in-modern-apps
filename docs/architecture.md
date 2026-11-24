@@ -1,4 +1,4 @@
-# Architecture (step 3)
+# Architecture (step 4)
 
 > These docs describe the branch you are on. Each checkpoint branch updates them.
 
@@ -12,7 +12,7 @@ The **fake provider** (`/fake-provider/...`, `apps/api/src/routes/fake-provider.
 third-party LLM API (Gemini-shaped) so the workshop runs offline. It is not part of the app and
 the web no longer calls it.
 
-## Request flow on step 3 (Exercises A and B solved)
+## Request flow on step 4 (Exercises A, B and C solved)
 
 ```mermaid
 sequenceDiagram
@@ -28,8 +28,9 @@ sequenceDiagram
   end
   UI->>API: POST /api/auth/login { email }
   API-->>UI: { token, user }
-  UI->>API: POST /api/assistant { question, tenantId }<br/>Authorization: Bearer token
+  UI->>API: POST /api/assistant { question }<br/>Authorization: Bearer token
   Note over API: requireAuth (401) -> rate limit per user (429)<br/>AskRequestSchema: trimmed, 1–2,000 chars (400)
+  Note over API: tenant + user from the session<br/>assertCanRead before getReport (403: other tenant or viewer)
   API->>P: prompt built on the server, AbortSignal (504 after assistantTimeoutMs)
   P-->>API: model text (untrusted)
   Note over API: JSON.parse + InsightSchema.safeParse
@@ -44,8 +45,13 @@ sequenceDiagram
 A valid `Insight` is not a safe one: the schema checks shape, not intent. See
 [trust-boundaries.md](trust-boundaries.md).
 
-Still open: `tenantId` comes from the body and there is no role check (C), the route logs headers
-and body (D).
+`POST /api/data/report` follows the same rules: `requireAuth`, tenant from the session, a body
+`tenantId` that differs from it is answered with `403`, and `assertCanRead`
+(`apps/api/src/auth/authorize.ts`) runs before `getReport`. Denials throw `ForbiddenError`, which
+the app error handler maps to `403 { error: 'forbidden' }`. Optional database layer:
+[rls.md](rls.md).
+
+Still open: the assistant route logs headers and body, and the negative tests are `it.todo` (D).
 
 ## Trust boundaries
 
