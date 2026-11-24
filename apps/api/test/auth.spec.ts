@@ -1,22 +1,19 @@
-// WORKSHOP(D): implement these tests. They must not depend on network or on model text.
-// Use createApp({ config: testConfig }) and the helpers in ./helpers.ts. Mock provider only.
-//
-// Hints:
-// - request(createApp({ config: testConfig })).post('/api/assistant').set('Authorization', bearer('alice@acme'))
-// - Tampered token: split tokenFor('alice@acme') on '.', decode the payload (base64url JSON), set
-//   tenantId: 'globex', re-encode it and keep the old signature (see login.spec.ts "tampered token").
-// - Expired token: signToken(user, TEST_SECRET, Date.now() - 9 * 60 * 60 * 1000) from ../src/auth/token.js
-//   (user = findUserByEmail('alice@acme') from ../src/data/users.js).
-// - Assert status and body only: 401 bodies are exactly { error: 'unauthorized' }.
-import { describe, it } from 'vitest';
+// WORKSHOP(D): no test to write here during the workshop. The authentication todos are extras:
+// ./extras/auth.extra.spec.ts (after the workshop). The test below is a worked example of the
+// pattern (status and exact body, mock provider, no network) to copy for the core todos.
+import request from 'supertest';
+import { describe, expect, it } from 'vitest';
+import { createApp } from '../src/app.js';
+import { testConfig } from './helpers.js';
 
 describe('POST /api/assistant authentication', () => {
-  it.todo('returns 401 { error: "unauthorized" } when the Authorization header is missing');
-  it.todo(
-    'returns 401 { error: "unauthorized" } for a tampered token (payload tenantId "globex", old signature)',
-  );
-  it.todo('returns 401 { error: "unauthorized" } for an expired token (signed 9 hours ago)');
-  it.todo(
-    'returns 200 and a body that passes AssistantSuccessSchema for bearer("alice@acme") and { question }',
-  );
+  it('returns 401 { error: "unauthorized" } for a malformed bearer token (worked example)', async () => {
+    const res = await request(createApp({ config: testConfig }))
+      .post('/api/assistant')
+      .set('Authorization', 'Bearer not-a-token')
+      .send({ question: 'Summarize performance this quarter.' });
+
+    expect(res.status).toBe(401);
+    expect(res.body).toEqual({ error: 'unauthorized' });
+  });
 });
