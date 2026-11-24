@@ -15,10 +15,14 @@
   color: #555;
 }
 
-.placeholder {
-  margin-top: 2rem;
-  padding: 1.5rem;
-  border: 1px dashed #bbb;
-  border-radius: 0.5rem;
-  color: #666;
+.who {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.who button {
+  padding: 0.25rem 0.75rem;
+  cursor: pointer;
 }

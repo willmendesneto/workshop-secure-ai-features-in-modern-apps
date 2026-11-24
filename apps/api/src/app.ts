@@ -1,11 +1,18 @@
 import express, { type ErrorRequestHandler, type Express } from 'express';
 import { loadConfig, type Config } from './config.js';
 import { logger } from './logger.js';
+import { createProvider } from './providers/index.js';
+import type { LlmProvider } from './providers/types.js';
+import { assistantRouter } from './routes/assistant.js';
 import { authRouter } from './routes/auth.js';
+import { dataRouter } from './routes/data.js';
+import { fakeProviderRouter } from './routes/fake-provider.js';
 
 export interface AppOptions {
   /** Overrides on top of the environment config (handy in tests). */
   config?: Partial<Config>;
+  /** Replaces the configured LLM provider (tests use it to inspect prompts). */
+  provider?: LlmProvider;
 }
 
 function clientErrorStatus(err: unknown): number | undefined {
@@ -30,6 +37,7 @@ const errorHandler: ErrorRequestHandler = (err: unknown, _req, res, _next) => {
 
 export function createApp(options: AppOptions = {}): Express {
   const config: Config = { ...loadConfig(), ...options.config };
+  const provider = options.provider ?? createProvider(config);
   const app = express();
 
   app.disable('x-powered-by');
@@ -40,6 +48,11 @@ export function createApp(options: AppOptions = {}): Express {
   });
 
   app.use('/api/auth', authRouter(config));
+  app.use('/api/data', dataRouter());
+  app.use('/api/assistant', assistantRouter(provider));
+
+  // Not part of the app: a simulated third-party LLM API so the workshop runs offline.
+  app.use('/fake-provider', fakeProviderRouter(config));
 
   app.use((_req, res) => {
     res.status(404).json({ error: 'Not found' });

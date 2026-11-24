@@ -1,0 +1,17 @@
+<section class="login" aria-labelledby="login-title">
+  <h2 id="login-title">Sign in as a demo user</h2>
+  <p>Fake login: pick a user. No passwords in this workshop.</p>
+  <ul class="users">
+    @for (user of users; track user.email) {
+    <li>
+      <button type="button" [disabled]="pending() !== null" (click)="signIn(user.email)">
+        {{ user.email }}
+      </button>
+      <span class="description">{{ user.description }}</span>
+    </li>
+    }
+  </ul>
+  @if (error(); as message) {
+  <p class="error" role="alert">{{ message }}</p>
+  }
+</section>

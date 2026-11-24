@@ -1,11 +1,19 @@
 <header class="app-header">
   <h1>{{ title }}</h1>
   <p class="tagline">Ask about a company and get a structured insight.</p>
+  @if (sessions.session(); as session) {
+  <p class="who">
+    Signed in as <strong>{{ session.user.email }}</strong> ({{ session.user.role }}, {{
+    session.user.tenantId }})
+    <button type="button" (click)="sessions.logout()">Log out</button>
+  </p>
+  }
 </header>
 
 <main class="app-main">
-  <!-- Placeholder: the assistant chat arrives in the next step of the workshop. -->
-  <section class="placeholder" aria-live="polite">
-    <p>The assistant is not wired up yet.</p>
-  </section>
+  @if (sessions.session(); as session) {
+  <app-chat [user]="session.user" />
+  } @else {
+  <app-login />
+  }
 </main>

@@ -1,0 +1,39 @@
+<section class="chat" aria-labelledby="chat-title">
+  <h2 id="chat-title">Ask the assistant</h2>
+  <form (submit)="$event.preventDefault(); ask()">
+    <label for="question">Question</label>
+    <textarea
+      id="question"
+      name="question"
+      rows="4"
+      [value]="question()"
+      (input)="onInput($event)"
+    ></textarea>
+    <button type="submit" [disabled]="loading()">{{ loading() ? 'Thinking…' : 'Ask' }}</button>
+  </form>
+
+  <div aria-live="polite">
+    @if (loading()) {
+    <p class="status">Asking the model…</p>
+    } @if (error(); as message) {
+    <p class="error" role="alert">{{ message }}</p>
+    }
+  </div>
+
+  <!-- WORKSHOP(B): renders unvalidated model output; with MOCK_SCENARIO=malformed fields are missing or the wrong type. -->
+  @if (insight(); as result) {
+  <article class="result" aria-labelledby="result-title">
+    <h3 id="result-title">
+      Insight
+      <span class="badge" [attr.data-risk]="result.riskLevel">Risk: {{ result.riskLevel }}</span>
+    </h3>
+    <p class="summary">{{ result.summary }}</p>
+    <h4>Recommendations</h4>
+    <ul>
+      @for (item of result.recommendations; track $index) {
+      <li>{{ item }}</li>
+      }
+    </ul>
+  </article>
+  }
+</section>

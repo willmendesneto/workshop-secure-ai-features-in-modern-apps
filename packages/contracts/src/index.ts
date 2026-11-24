@@ -36,3 +36,49 @@ export const LoginRequestSchema = z.object({
   email: z.string().min(1),
 });
 export type LoginRequest = z.infer<typeof LoginRequestSchema>;
+
+export const SeveritySchema = z.enum(['low', 'medium', 'high']);
+export type Severity = z.infer<typeof SeveritySchema>;
+
+/** One risk flagged for a quarter. */
+export const RiskSchema = z.object({
+  id: z.string().min(1),
+  title: z.string().min(1),
+  severity: SeveritySchema,
+  detail: z.string().min(1),
+});
+export type Risk = z.infer<typeof RiskSchema>;
+
+/** One quarter of synthetic company data. */
+export const QuarterSchema = z.object({
+  quarter: z.string().regex(/^\d{4}-Q[1-4]$/),
+  /** Revenue in USD. */
+  revenue: z.number().nonnegative(),
+  /** Gross margin in percent. */
+  grossMargin: z.number(),
+  /** Customer churn in percent. */
+  churn: z.number().nonnegative(),
+  risks: z.array(RiskSchema),
+});
+export type Quarter = z.infer<typeof QuarterSchema>;
+
+/** Full company report for one tenant (data/<tenantId>.json). Includes risks. */
+export const CompanyReportSchema = z.object({
+  tenantId: z.string().min(1),
+  company: z.string().min(1),
+  quarters: z.array(QuarterSchema),
+});
+export type CompanyReport = z.infer<typeof CompanyReportSchema>;
+
+/** Successful body of POST /api/assistant once the output is validated (Exercise B). */
+export const AssistantSuccessSchema = z.object({
+  insight: InsightSchema,
+});
+export type AssistantSuccess = z.infer<typeof AssistantSuccessSchema>;
+
+/** Error body of POST /api/assistant (Exercise B adds the fallback). */
+export const AssistantFailureSchema = z.object({
+  error: z.string().min(1),
+  fallback: z.object({ message: z.string().min(1) }).optional(),
+});
+export type AssistantFailure = z.infer<typeof AssistantFailureSchema>;

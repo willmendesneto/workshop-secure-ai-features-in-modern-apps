@@ -26,6 +26,7 @@
     "test": "npm run build:contracts && npm run test --workspaces --if-present",
     "check:bundle": "npm run build:contracts && npm run build -w @workshop/web && node scripts/check-bundle.mjs",
     "check:bundle:ci": "node scripts/check-bundle.mjs --expect-step",
+    "check:step": "node scripts/check-step.mjs",
     "validate": "npm run format:check && npm run lint && npm run typecheck && npm run test && npm run build"
   },
   "devDependencies": {

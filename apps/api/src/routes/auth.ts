@@ -1,13 +1,8 @@
-import { readFileSync } from 'node:fs';
-import { LoginRequestSchema, UserSchema } from '@workshop/contracts';
+import { LoginRequestSchema } from '@workshop/contracts';
 import { Router } from 'express';
-import { z } from 'zod';
 import { signToken } from '../auth/token.js';
 import type { Config } from '../config.js';
-
-// Resolved from this module's location (src/routes or dist/routes), so it works from any cwd.
-const usersFile = new URL('../../../../data/users.json', import.meta.url);
-const users = z.array(UserSchema).parse(JSON.parse(readFileSync(usersFile, 'utf8')));
+import { findUserByEmail } from '../data/users.js';
 
 export function authRouter(config: Config): Router {
   const router = Router();
@@ -20,8 +15,7 @@ export function authRouter(config: Config): Router {
       return;
     }
 
-    const email = body.data.email.trim().toLowerCase();
-    const user = users.find((candidate) => candidate.email === email);
+    const user = findUserByEmail(body.data.email);
     if (!user) {
       res.status(401).json({ error: 'Unknown user' });
       return;

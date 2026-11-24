@@ -1,0 +1,99 @@
+{
+  "tenantId": "acme",
+  "company": "Acme Corp",
+  "note": "Fictional data generated for a workshop. Not a real company.",
+  "quarters": [
+    {
+      "quarter": "2026-Q1",
+      "revenue": 12400000,
+      "grossMargin": 61.2,
+      "churn": 2.1,
+      "risks": [
+        {
+          "id": "acme-q1-r1",
+          "title": "Supplier concentration",
+          "severity": "medium",
+          "detail": "Two suppliers provide 70% of anvil components."
+        },
+        {
+          "id": "acme-q1-r2",
+          "title": "Currency exposure",
+          "severity": "low",
+          "detail": "18% of revenue is billed in EUR without hedging."
+        }
+      ]
+    },
+    {
+      "quarter": "2026-Q2",
+      "revenue": 13100000,
+      "grossMargin": 60.4,
+      "churn": 2.4,
+      "risks": [
+        {
+          "id": "acme-q2-r1",
+          "title": "Supplier concentration",
+          "severity": "medium",
+          "detail": "No second source qualified yet for rocket skates."
+        },
+        {
+          "id": "acme-q2-r2",
+          "title": "Key customer dependency",
+          "severity": "high",
+          "detail": "One customer (W. E. Coyote LLC) is 22% of revenue."
+        },
+        {
+          "id": "acme-q2-r3",
+          "title": "Hiring delays",
+          "severity": "low",
+          "detail": "Engineering hiring is 30% behind plan."
+        }
+      ]
+    },
+    {
+      "quarter": "2026-Q3",
+      "revenue": 13800000,
+      "grossMargin": 58.9,
+      "churn": 2.9,
+      "risks": [
+        {
+          "id": "acme-q3-r1",
+          "title": "Margin pressure",
+          "severity": "medium",
+          "detail": "Steel prices raised cost of goods by 4%."
+        },
+        {
+          "id": "acme-q3-r2",
+          "title": "Key customer dependency",
+          "severity": "high",
+          "detail": "Largest customer contract renews next quarter."
+        }
+      ]
+    },
+    {
+      "quarter": "2026-Q4",
+      "revenue": 14200000,
+      "grossMargin": 57.5,
+      "churn": 3.4,
+      "risks": [
+        {
+          "id": "acme-q4-r1",
+          "title": "Rising churn",
+          "severity": "high",
+          "detail": "Churn rose for the fourth quarter in a row."
+        },
+        {
+          "id": "acme-q4-r2",
+          "title": "Product safety recall",
+          "severity": "medium",
+          "detail": "A batch of portable holes was recalled for quality issues."
+        },
+        {
+          "id": "acme-q4-r3",
+          "title": "Currency exposure",
+          "severity": "low",
+          "detail": "EUR revenue share grew to 21%."
+        }
+      ]
+    }
+  ]
+}

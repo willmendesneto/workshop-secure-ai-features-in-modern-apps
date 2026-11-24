@@ -1,0 +1,93 @@
+{
+  "tenantId": "globex",
+  "company": "Globex Inc.",
+  "note": "Fictional data generated for a workshop. Not a real company.",
+  "quarters": [
+    {
+      "quarter": "2026-Q1",
+      "revenue": 8700000,
+      "grossMargin": 48.3,
+      "churn": 4.2,
+      "risks": [
+        {
+          "id": "globex-q1-r1",
+          "title": "Regulatory review",
+          "severity": "high",
+          "detail": "A regulator opened a review of the volcano lair permits."
+        },
+        {
+          "id": "globex-q1-r2",
+          "title": "Cloud cost growth",
+          "severity": "medium",
+          "detail": "Infrastructure spend grew 25% quarter over quarter."
+        }
+      ]
+    },
+    {
+      "quarter": "2026-Q2",
+      "revenue": 8400000,
+      "grossMargin": 47.1,
+      "churn": 4.8,
+      "risks": [
+        {
+          "id": "globex-q2-r1",
+          "title": "Regulatory review",
+          "severity": "high",
+          "detail": "Review extended; possible fine not yet estimated."
+        },
+        {
+          "id": "globex-q2-r2",
+          "title": "Sales team turnover",
+          "severity": "medium",
+          "detail": "Three of eight account executives left."
+        }
+      ]
+    },
+    {
+      "quarter": "2026-Q3",
+      "revenue": 8900000,
+      "grossMargin": 49.0,
+      "churn": 4.1,
+      "risks": [
+        {
+          "id": "globex-q3-r1",
+          "title": "Cloud cost growth",
+          "severity": "medium",
+          "detail": "Reserved capacity commitments expire in Q4."
+        },
+        {
+          "id": "globex-q3-r2",
+          "title": "Data residency",
+          "severity": "low",
+          "detail": "Two enterprise prospects require EU-only hosting."
+        },
+        {
+          "id": "globex-q3-r3",
+          "title": "Pricing pressure",
+          "severity": "medium",
+          "detail": "A competitor cut list prices by 15%."
+        }
+      ]
+    },
+    {
+      "quarter": "2026-Q4",
+      "revenue": 9600000,
+      "grossMargin": 50.2,
+      "churn": 3.7,
+      "risks": [
+        {
+          "id": "globex-q4-r1",
+          "title": "Regulatory review",
+          "severity": "medium",
+          "detail": "Review closed with a warning; remediation plan due."
+        },
+        {
+          "id": "globex-q4-r2",
+          "title": "Pricing pressure",
+          "severity": "medium",
+          "detail": "Average deal size fell 6%."
+        }
+      ]
+    }
+  ]
+}

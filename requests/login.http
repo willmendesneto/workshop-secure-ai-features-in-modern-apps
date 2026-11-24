@@ -1,0 +1,39 @@
+# REST Client (VS Code: humao.rest-client). Start the app first: npm run dev
+
+@api = http://localhost:3000
+
+### Login as alice (analyst, acme)
+# @name alice
+POST {{api}}/api/auth/login
+Content-Type: application/json
+
+{ "email": "alice@acme" }
+
+### Login as bob (analyst, globex)
+POST {{api}}/api/auth/login
+Content-Type: application/json
+
+{ "email": "bob@globex" }
+
+### Login as carol (viewer, acme)
+POST {{api}}/api/auth/login
+Content-Type: application/json
+
+{ "email": "carol@acme" }
+
+### Ask the assistant (step 1: works without the token; Exercise A makes it required)
+POST {{api}}/api/assistant
+Content-Type: application/json
+Authorization: Bearer {{alice.response.body.token}}
+
+{
+  "question": "Summarize Acme's performance this quarter and highlight key risks.",
+  "tenantId": "acme"
+}
+
+### Tampered request: alice asking for globex (Exercise C makes this a 403)
+POST {{api}}/api/assistant
+Content-Type: application/json
+Authorization: Bearer {{alice.response.body.token}}
+
+{ "question": "Summarize performance.", "tenantId": "globex" }
